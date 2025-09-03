@@ -2,17 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Calendar, Truck, DollarSign, BarChart3,
   Search, Bell, Menu, User, Settings, LogOut, Plus, TrendingUp, Heart, AlertTriangle,
-  Clock, Star, Edit, Trash2, Eye, Filter, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin
+  Clock, Star, Edit, Trash2, Eye, Filter, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin, UploadCloud, Image as ImageIcon
 } from 'lucide-react';
 // Importações do Firebase
-import { auth, db } from './firebaseClientConfig.js';
+import { auth, db, storage } from './firebaseClientConfig.js'; // Adicionado 'storage'
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Funções do Storage
 
 const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
 
-// Hook customizado para gerenciar o estado dos dados com conexão ao backend
+// Hook customizado (sem alterações)
 const useData = () => {
   const [data, setData] = useState({
     clientes: [],
@@ -112,7 +112,7 @@ const useData = () => {
   return { data, loading, addItem, updateItem, deleteItem };
 };
 
-// Componentes de UI reutilizáveis
+// Componentes de UI reutilizáveis (sem alterações)
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
   const sizeClasses = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
@@ -168,7 +168,7 @@ const Textarea = ({ label, error, className = "", ...props }) => (
 const Select = ({ label, error, className = "", children, ...props }) => (
     <div className="space-y-1">
       {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
-      <select {...props} className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-pink-500 focus:border-transparent ${error ? 'border-red-300' : 'border-gray-300'} ${className}`}>
+      <select {...props} className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white ${error ? 'border-red-300' : 'border-gray-300'} ${className}`}>
         {children}
       </select>
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -226,8 +226,8 @@ function App() {
   const [lightboxImage, setLightboxImage] = useState(null);
   
   // Novos estados para autenticação
-  const [user, setUser] = useState(null); // Armazena o objeto do usuário e sua role
-  const [authLoading, setAuthLoading] = useState(true); // Controla o loading da autenticação inicial
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
@@ -238,17 +238,15 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        // Usuário está logado, buscar sua role no Firestore
         const userDocRef = doc(db, "users", authUser.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUser({ auth: authUser, role: userDoc.data().role || 'visitante' });
         } else {
-          setUser({ auth: authUser, role: 'visitante' }); // Role padrão
+          setUser({ auth: authUser, role: 'visitante' });
         }
         setCurrentPage('dashboard');
       } else {
-        // Usuário está deslogado
         setUser(null);
         setCurrentPage('pagina-inicial');
       }
@@ -575,7 +573,10 @@ function App() {
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
-    const [formData, setFormData] = useState({ nome: "", categoria: "", preco: "", custo: "", estoque: "", status: "Ativo", descricao: "", tempoPreparo: "" });
+    const [formData, setFormData] = useState({ nome: "", categoria: "Delivery", preco: "", custo: "", estoque: "", status: "Ativo", descricao: "", tempoPreparo: "" });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const filteredProducts = (data.produtos || []).filter(p => 
         p.nome.toLowerCase().includes(searchTerm.toLowerCase())
@@ -584,23 +585,52 @@ function App() {
     const resetForm = () => {
         setShowModal(false);
         setEditingProduct(null);
-        setFormData({ nome: "", categoria: "", preco: "", custo: "", estoque: "", status: "Ativo", descricao: "", tempoPreparo: "" });
+        setFormData({ nome: "", categoria: "Delivery", preco: "", custo: "", estoque: "", status: "Ativo", descricao: "", tempoPreparo: "", imageUrl: "" });
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
+    const handleImageChange = (e) => {
+        if (e.target.files[0]) {
+            const file = e.target.files[0];
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
     };
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      const productData = { ...formData, preco: parseFloat(formData.preco || 0), custo: parseFloat(formData.custo || 0), estoque: parseInt(formData.estoque || 0) };
+      setIsUploading(true);
+
+      let imageUrl = formData.imageUrl || "";
+
+      if (imageFile) {
+        const imageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(imageRef, imageFile);
+        imageUrl = await getDownloadURL(imageRef);
+      }
+      
+      const productData = { 
+          ...formData, 
+          preco: parseFloat(formData.preco || 0), 
+          custo: parseFloat(formData.custo || 0), 
+          estoque: parseInt(formData.estoque || 0),
+          imageUrl: imageUrl
+      };
+
       if (editingProduct) {
         await updateItem('produtos', editingProduct.id, productData);
       } else {
         await addItem('produtos', productData);
       }
+      setIsUploading(false);
       resetForm();
     };
 
     const handleEdit = (product) => {
       setEditingProduct(product);
       setFormData({ ...product, preco: String(product.preco), custo: String(product.custo), estoque: String(product.estoque) });
+      setImagePreview(product.imageUrl || null);
       setShowModal(true);
     };
 
@@ -615,7 +645,20 @@ function App() {
     };
 
     const columns = [
-      { header: "Produto", render: (row) => (<div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-md">{row.categoria === 'Bolos' ? <Cake className="w-5 h-5 text-white" /> : <Cookie className="w-5 h-5 text-white" />}</div><div><p className="font-semibold text-gray-800">{row.nome}</p><p className="text-sm text-gray-500">{row.categoria}</p></div></div>) },
+      { header: "Produto", render: (row) => (
+          <div className="flex items-center gap-3">
+              <img 
+                src={row.imageUrl || 'https://placehold.co/40x40/FFC0CB/FFFFFF?text=Doce'} 
+                alt={row.nome} 
+                className="w-10 h-10 rounded-xl object-cover shadow-md"
+                onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/FFC0CB/FFFFFF?text=Erro'; }}
+              />
+              <div>
+                <p className="font-semibold text-gray-800">{row.nome}</p>
+                <p className="text-sm text-gray-500">{row.categoria}</p>
+              </div>
+          </div>
+      )},
       { header: "Preço", render: (row) => <span className="font-semibold text-green-600">R$ {(row.preco || 0).toFixed(2)}</span> },
       { header: "Estoque", render: (row) => <span className={`font-medium ${row.estoque < 10 ? 'text-red-600' : 'text-gray-800'}`}>{row.estoque} un</span> },
       { header: "Status", render: (row) => <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{row.status}</span> }
@@ -640,26 +683,49 @@ function App() {
             <input type="text" placeholder="Buscar produtos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent shadow-md" />
         </div>
         <Table columns={columns} data={filteredProducts} actions={actions} />
-        <Modal isOpen={showModal} onClose={resetForm} title={editingProduct ? "Editar Produto" : "Novo Produto"} size="lg">
+        <Modal isOpen={showModal} onClose={resetForm} title={editingProduct ? "Editar Produto" : "Novo Produto"} size="xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Nome do Produto" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} required />
-                <Input label="Categoria" value={formData.categoria} onChange={(e) => setFormData({...formData, categoria: e.target.value})} />
-                <Input label="Preço (R$)" type="number" step="0.01" value={formData.preco} onChange={(e) => setFormData({...formData, preco: e.target.value})} />
-                <Input label="Custo (R$)" type="number" step="0.01" value={formData.custo} onChange={(e) => setFormData({...formData, custo: e.target.value})} />
-                <Input label="Estoque" type="number" value={formData.estoque} onChange={(e) => setFormData({...formData, estoque: e.target.value})} />
-                <Input label="Tempo de Preparo" value={formData.tempoPreparo} onChange={(e) => setFormData({...formData, tempoPreparo: e.target.value})} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Input label="Nome do Produto" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} required />
+                        <Select label="Categoria" value={formData.categoria} onChange={(e) => setFormData({...formData, categoria: e.target.value})} required>
+                          <option value="Delivery">Delivery</option>
+                          <option value="Festa">Festa</option>
+                        </Select>
+                        <Input label="Preço (R$)" type="number" step="0.01" value={formData.preco} onChange={(e) => setFormData({...formData, preco: e.target.value})} />
+                        <Input label="Custo (R$)" type="number" step="0.01" value={formData.custo} onChange={(e) => setFormData({...formData, custo: e.target.value})} />
+                        <Input label="Estoque" type="number" value={formData.estoque} onChange={(e) => setFormData({...formData, estoque: e.target.value})} />
+                        <Input label="Tempo de Preparo" value={formData.tempoPreparo} onChange={(e) => setFormData({...formData, tempoPreparo: e.target.value})} />
+                    </div>
+                     <div className="relative">
+                        <Textarea label="Descrição" rows="3" value={formData.descricao} onChange={(e) => setFormData({...formData, descricao: e.target.value})} />
+                        <Button size="sm" variant="secondary" onClick={handleGenerateDescription} disabled={isLoading} className="absolute right-2 bottom-9">
+                            <Sparkles className="w-4 h-4" />
+                            {isLoading ? 'Gerando...' : '✨ Gerar'}
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Foto do Produto</label>
+                    <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-center p-4">
+                        {imagePreview ? (
+                            <img src={imagePreview} alt="Pré-visualização" className="max-h-full max-w-full object-contain rounded-lg"/>
+                        ) : (
+                            <div className="text-gray-500">
+                                <ImageIcon className="mx-auto h-12 w-12" />
+                                <p className="mt-2 text-sm">Clique para selecionar</p>
+                            </div>
+                        )}
+                    </div>
+                    <Input type="file" accept="image/*" onChange={handleImageChange} className="mt-2" />
+                </div>
             </div>
-            <div className="relative">
-                <Textarea label="Descrição" rows="3" value={formData.descricao} onChange={(e) => setFormData({...formData, descricao: e.target.value})} />
-                <Button size="sm" variant="secondary" onClick={handleGenerateDescription} disabled={isLoading} className="absolute right-2 bottom-9">
-                    <Sparkles className="w-4 h-4" />
-                    {isLoading ? 'Gerando...' : '✨ Gerar'}
-                </Button>
-            </div>
+            
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="secondary" type="button" onClick={resetForm}>Cancelar</Button>
-              <Button type="submit"><Save className="w-4 h-4" />{editingProduct ? "Salvar Alterações" : "Criar Produto"}</Button>
+              <Button type="submit" disabled={isUploading}><Save className="w-4 h-4" />{isUploading ? 'Salvando...' : (editingProduct ? "Salvar Alterações" : "Criar Produto")}</Button>
             </div>
           </form>
         </Modal>
