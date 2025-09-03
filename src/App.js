@@ -4,6 +4,11 @@ import {
   Search, Bell, Menu, User, Settings, LogOut, Plus, TrendingUp, Heart, AlertTriangle,
   Clock, Star, Edit, Trash2, Eye, Filter, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin
 } from 'lucide-react';
+// Importações do Firebase
+import { auth, db } from './firebaseClientConfig.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
 
 const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
 
@@ -107,7 +112,7 @@ const useData = () => {
   return { data, loading, addItem, updateItem, deleteItem };
 };
 
-// Componentes de UI reutilizáveis
+// Componentes de UI reutilizáveis (sem alterações)
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
   const sizeClasses = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
@@ -219,39 +224,93 @@ function App() {
   const [generatedContent, setGeneratedContent] = useState({ isOpen: false, title: '', content: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
-  const [currentUserRole, setCurrentUserRole] = useState(null); // 'admin', 'visitante', ou null
+  
+  // Novos estados para autenticação
+  const [user, setUser] = useState(null); // Armazena o objeto do usuário e sua role
+  const [authLoading, setAuthLoading] = useState(true); // Controla o loading da autenticação inicial
   const [showLogin, setShowLogin] = useState(false);
-  const [username, setUsername] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  const handleLogin = () => {
-    if (username === 'Administrador' && password === 'Administrador') {
-        setCurrentUserRole('admin');
-        setShowLogin(false);
-        setCurrentPage('dashboard'); // Redireciona para o dashboard após login de admin
-        setUsername('');
-        setPassword('');
+  // Efeito para ouvir o estado de autenticação do Firebase
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        // Usuário está logado, buscar sua role no Firestore
+        const userDocRef = doc(db, "users", authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUser({ auth: authUser, role: userDoc.data().role });
+        } else {
+          // Caso raro: usuário existe no Auth mas não no Firestore.
+          setUser({ auth: authUser, role: 'visitante' }); // Role padrão
+        }
+        setCurrentPage('dashboard');
+      } else {
+        // Usuário está deslogado
+        setUser(null);
+        setCurrentPage('pagina-inicial');
+      }
+      setAuthLoading(false); // Autenticação verificada
+    });
+
+    return () => unsubscribe(); // Limpa o listener ao desmontar o componente
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      setLoginError('');
+      await signInWithEmailAndPassword(auth, email, password);
+      // O onAuthStateChanged vai cuidar de atualizar o estado
+      setShowLogin(false);
+      setEmail('');
+      setPassword('');
+    } catch (error) {
+      console.error("Erro de login:", error.code);
+      setLoginError('Email ou senha inválidos.');
+    }
+  };
+  
+  const handleRegister = async () => {
+    try {
         setLoginError('');
-    } else if (username === 'Visitante' && password === 'Visitante') {
-        setCurrentUserRole('visitante');
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUser = userCredential.user;
+
+        // Salva a role do novo usuário no Firestore
+        await setDoc(doc(db, "users", newUser.uid), {
+            email: newUser.email,
+            role: "visitante" // Novos usuários são sempre visitantes por padrão
+        });
+
+        // O onAuthStateChanged vai cuidar de atualizar o estado
         setShowLogin(false);
-        setCurrentPage('dashboard'); // Redireciona para o dashboard após login de visitante
-        setUsername('');
+        setEmail('');
         setPassword('');
-        setLoginError('');
-    } else {
-        setLoginError('Usuário ou senha inválidos.');
+    } catch (error) {
+        console.error("Erro de registro:", error.code);
+        if (error.code === 'auth/email-already-in-use') {
+            setLoginError('Este email já está em uso.');
+        } else {
+            setLoginError('Erro ao registrar. Tente novamente.');
+        }
     }
   };
 
-  const handleLogout = () => {
-      setCurrentUserRole(null);
-      setCurrentPage('pagina-inicial');
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // O onAuthStateChanged vai cuidar de atualizar o estado
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   };
 
   const allMenuItems = [
-    { id: 'pagina-inicial', label: 'Página Inicial', icon: Home, roles: ['admin', 'visitante', null] }, // Visível para todos
+    { id: 'pagina-inicial', label: 'Página Inicial', icon: Home, roles: ['admin', 'visitante', null] },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'visitante'] },
     { id: 'clientes', label: 'Clientes', icon: Users, roles: ['admin', 'visitante'] },
     { id: 'pedidos', label: 'Pedidos', icon: ShoppingCart, roles: ['admin', 'visitante'] },
@@ -263,10 +322,11 @@ function App() {
     { id: 'configuracoes', label: 'Configurações', icon: Settings, roles: ['admin'] },
   ];
 
+  const currentUserRole = user ? user.role : null;
   const menuItems = allMenuItems.filter(item => item.roles.includes(currentUserRole));
 
 
-  // Função para chamar a API Gemini
+  // Função para chamar a API Gemini (sem alterações)
   const callGeminiAPI = async (prompt) => {
     setIsLoading(true);
     try {
@@ -313,7 +373,7 @@ function App() {
     setConfirmDelete({ isOpen: false, section: null, id: null });
   };
   
-  // Componente ImageSlider
+  // Componente ImageSlider (sem alterações)
   const ImageSlider = ({ images, onImageClick }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -333,7 +393,7 @@ function App() {
     );
   };
 
-  // Componente PaginaInicial
+  // Componente PaginaInicial (sem alterações)
   const PaginaInicial = () => {
     const slideImages = [
         '/slide/slide1.png',
@@ -405,7 +465,7 @@ function App() {
     );
   };
 
-  // Componente Dashboard
+  // Componente Dashboard (sem alterações)
   const Dashboard = () => {
     const totalVendas = (data.pedidos || []).reduce((acc, pedido) => acc + (pedido.total || 0), 0);
     const pedidosPendentes = (data.pedidos || []).filter(p => p.status === 'Pendente').length;
@@ -428,7 +488,7 @@ function App() {
     );
   };
 
-  // Componente Clientes
+  // Componente Clientes (sem alterações)
   const Clientes = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
@@ -515,7 +575,7 @@ function App() {
     );
   }
   
-  // Componente Produtos
+  // Componente Produtos (sem alterações)
   const Produtos = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
@@ -612,28 +672,7 @@ function App() {
     );
   }
   
-  // Componente Pedidos (Placeholder)
-  const Pedidos = () => {
-    return <div className="p-6"><h1 className="text-3xl font-bold">Gestão de Pedidos</h1></div>
-  }
-
-  // Componente Agenda (Placeholder)
-  const Agenda = () => {
-    return <div className="p-6"><h1 className="text-3xl font-bold">Agenda</h1></div>
-  }
-
-  // Componente Financeiro (Placeholder)
-  const Financeiro = () => {
-      return <div className="p-6"><h1 className="text-3xl font-bold">Financeiro</h1></div>
-  }
-
-  // Componente Relatórios (Placeholder)
-  const Relatorios = () => {
-    return <div className="p-6"><h1 className="text-3xl font-bold">Relatórios</h1></div>
-  }
-
-
-  // Placeholder para páginas em desenvolvimento
+  // Componentes Placeholder
   const PlaceholderPage = ({ title }) => (
     <div className="p-6">
       <h1 className="text-3xl font-bold text-pink-600">{title}</h1>
@@ -642,30 +681,25 @@ function App() {
   );
 
   const renderCurrentPage = () => {
-    if (loading && !showLogin) {
+    if (authLoading || (loading && user)) {
       return (
         <div className="flex h-full w-full items-center justify-center">
-            <p className="text-lg text-gray-500">Carregando dados...</p>
+            <p className="text-lg text-gray-500">Carregando...</p>
         </div>
       );
-    }
-
-    if (!currentUserRole && currentPage !== 'pagina-inicial') {
-        setCurrentPage('pagina-inicial');
-        return <PaginaInicial />;
     }
     
     switch (currentPage) {
       case 'pagina-inicial': return <PaginaInicial />;
-      case 'dashboard': return currentUserRole ? <Dashboard /> : <PaginaInicial />;
-      case 'clientes': return currentUserRole ? <Clientes /> : <PaginaInicial />;
-      case 'pedidos': return currentUserRole ? <Pedidos /> : <PaginaInicial />;
-      case 'produtos': return currentUserRole ? <Produtos /> : <PaginaInicial />;
-      case 'agenda': return currentUserRole ? <Agenda /> : <PaginaInicial />;
-      case 'fornecedores': return currentUserRole ? <PlaceholderPage title="Fornecedores" /> : <PaginaInicial />;
-      case 'financeiro': return currentUserRole === 'admin' ? <Financeiro /> : <PaginaInicial />;
-      case 'relatorios': return currentUserRole ? <Relatorios /> : <PaginaInicial />;
-      case 'configuracoes': return currentUserRole === 'admin' ? <PlaceholderPage title="Configurações" /> : <PaginaInicial />;
+      case 'dashboard': return user ? <Dashboard /> : <PaginaInicial />;
+      case 'clientes': return user ? <Clientes /> : <PaginaInicial />;
+      case 'pedidos': return user ? <PlaceholderPage title="Pedidos" /> : <PaginaInicial />;
+      case 'produtos': return user ? <Produtos /> : <PaginaInicial />;
+      case 'agenda': return user ? <PlaceholderPage title="Agenda" /> : <PaginaInicial />;
+      case 'fornecedores': return user ? <PlaceholderPage title="Fornecedores" /> : <PaginaInicial />;
+      case 'financeiro': return user?.role === 'admin' ? <PlaceholderPage title="Financeiro" /> : <PaginaInicial />;
+      case 'relatorios': return user ? <PlaceholderPage title="Relatórios" /> : <PaginaInicial />;
+      case 'configuracoes': return user?.role === 'admin' ? <PlaceholderPage title="Configurações" /> : <PaginaInicial />;
       default: return <PaginaInicial />;
     }
   };
@@ -687,7 +721,7 @@ function App() {
             </button>
           ))}
         </nav>
-        {currentUserRole && (
+        {user && (
           <div className="p-4 border-t">
             <button onClick={handleLogout} className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-pink-50 text-gray-700 ${!sidebarOpen ? 'justify-center' : ''}`}>
               <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -705,7 +739,12 @@ function App() {
           </div>
           <div className="flex items-center gap-4">
             <Bell className="w-5 h-5 text-gray-600 cursor-pointer" />
-            <User className="w-6 h-6 text-gray-600 cursor-pointer" onClick={() => setShowLogin(true)} />
+            <div className="relative">
+              <button onClick={() => { if(!user) setShowLogin(true) }} className="p-2 rounded-full hover:bg-gray-100">
+                <User className="w-6 h-6 text-gray-600" />
+              </button>
+              {user && <span className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></span>}
+            </div>
           </div>
         </div>
         <main className="flex-1 overflow-y-auto">
@@ -713,39 +752,23 @@ function App() {
         </main>
       </div>
 
-      {showLogin && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Login</h2>
-            <input 
-              type="text" 
-              placeholder="Usuário" 
-              className="w-full border p-2 rounded mb-3" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <input 
-              type="password" 
-              placeholder="Senha" 
-              className="w-full border p-2 rounded mb-3" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {loginError && <p className="text-red-500 text-sm mb-3">{loginError}</p>}
-            <div className="flex justify-end gap-2">
-              <button 
-                onClick={() => setShowLogin(false)} 
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Cancelar
-              </button>
-              <button onClick={handleLogin} className="px-4 py-2 bg-pink-600 text-white rounded">
-                Entrar
-              </button>
-            </div>
+      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)} title={isRegistering ? "Registrar Nova Conta" : "Login"} size="sm">
+        <div className="space-y-4">
+          <Input label="Email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label="Senha" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+          <div className="flex flex-col gap-2">
+            {isRegistering ? (
+              <Button onClick={handleRegister}>Registrar</Button>
+            ) : (
+              <Button onClick={handleLogin}>Entrar</Button>
+            )}
+            <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-pink-600 hover:underline text-center">
+              {isRegistering ? "Já tem uma conta? Faça login" : "Não tem uma conta? Registre-se"}
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
       <Modal isOpen={confirmDelete.isOpen} onClose={() => setConfirmDelete({ isOpen: false, section: null, id: null })} title="Confirmar Exclusão" size="sm">
         <div className="space-y-6">
@@ -776,4 +799,3 @@ function App() {
 }
 
 export default App;
-
