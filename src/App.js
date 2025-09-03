@@ -112,7 +112,7 @@ const useData = () => {
   return { data, loading, addItem, updateItem, deleteItem };
 };
 
-// Componentes de UI reutilizáveis (sem alterações)
+// Componentes de UI reutilizáveis
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
   const sizeClasses = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
@@ -242,9 +242,8 @@ function App() {
         const userDocRef = doc(db, "users", authUser.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          setUser({ auth: authUser, role: userDoc.data().role });
+          setUser({ auth: authUser, role: userDoc.data().role || 'visitante' });
         } else {
-          // Caso raro: usuário existe no Auth mas não no Firestore.
           setUser({ auth: authUser, role: 'visitante' }); // Role padrão
         }
         setCurrentPage('dashboard');
@@ -253,17 +252,16 @@ function App() {
         setUser(null);
         setCurrentPage('pagina-inicial');
       }
-      setAuthLoading(false); // Autenticação verificada
+      setAuthLoading(false);
     });
 
-    return () => unsubscribe(); // Limpa o listener ao desmontar o componente
+    return () => unsubscribe();
   }, []);
 
   const handleLogin = async () => {
     try {
       setLoginError('');
       await signInWithEmailAndPassword(auth, email, password);
-      // O onAuthStateChanged vai cuidar de atualizar o estado
       setShowLogin(false);
       setEmail('');
       setPassword('');
@@ -279,13 +277,11 @@ function App() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
 
-        // Salva a role do novo usuário no Firestore
         await setDoc(doc(db, "users", newUser.uid), {
             email: newUser.email,
-            role: "visitante" // Novos usuários são sempre visitantes por padrão
+            role: "visitante"
         });
 
-        // O onAuthStateChanged vai cuidar de atualizar o estado
         setShowLogin(false);
         setEmail('');
         setPassword('');
@@ -303,7 +299,6 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // O onAuthStateChanged vai cuidar de atualizar o estado
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
@@ -326,13 +321,13 @@ function App() {
   const menuItems = allMenuItems.filter(item => item.roles.includes(currentUserRole));
 
 
-  // Função para chamar a API Gemini (sem alterações)
+  // Função para chamar a API Gemini
   const callGeminiAPI = async (prompt) => {
     setIsLoading(true);
     try {
       const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
       const payload = { contents: chatHistory };
-      const apiKey = ""; // Deixe em branco, será fornecido pelo ambiente
+      const apiKey = "";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
       
       const response = await fetch(apiUrl, {
@@ -373,7 +368,7 @@ function App() {
     setConfirmDelete({ isOpen: false, section: null, id: null });
   };
   
-  // Componente ImageSlider (sem alterações)
+  // Componente ImageSlider
   const ImageSlider = ({ images, onImageClick }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -393,7 +388,7 @@ function App() {
     );
   };
 
-  // Componente PaginaInicial (sem alterações)
+  // Componente PaginaInicial
   const PaginaInicial = () => {
     const slideImages = [
         '/slide/slide1.png',
@@ -465,7 +460,7 @@ function App() {
     );
   };
 
-  // Componente Dashboard (sem alterações)
+  // Componente Dashboard
   const Dashboard = () => {
     const totalVendas = (data.pedidos || []).reduce((acc, pedido) => acc + (pedido.total || 0), 0);
     const pedidosPendentes = (data.pedidos || []).filter(p => p.status === 'Pendente').length;
@@ -488,7 +483,7 @@ function App() {
     );
   };
 
-  // Componente Clientes (sem alterações)
+  // Componente Clientes
   const Clientes = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
@@ -575,7 +570,7 @@ function App() {
     );
   }
   
-  // Componente Produtos (sem alterações)
+  // Componente Produtos
   const Produtos = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
@@ -799,3 +794,4 @@ function App() {
 }
 
 export default App;
+
