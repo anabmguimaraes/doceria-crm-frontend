@@ -5,7 +5,7 @@ import {
   Clock, Star, Edit, Trash2, Eye, Filter, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin
 } from 'lucide-react';
 
-const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/';
+const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
 
 // Hook customizado para gerenciar o estado dos dados com conexão ao backend
 const useData = () => {
