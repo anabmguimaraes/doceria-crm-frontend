@@ -11,19 +11,9 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
-        .cart-item-enter {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        .cart-item-enter-active {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 300ms, transform 300ms;
-        }
-        /* Animação de carregamento */
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #db2777; /* Cor rosa do Tailwind */
+            border-top: 4px solid #db2777;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -38,7 +28,7 @@
 <body class="bg-pink-50">
 
     <!-- Cabeçalho -->
-    <header class="bg-white shadow-md sticky top-0 z-10">
+    <header class="bg-white shadow-md sticky top-0 z-20">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <img src="/logotipo.png" alt="Logotipo" class="h-10">
@@ -54,7 +44,6 @@
     <!-- Conteúdo Principal -->
     <main class="container mx-auto px-6 py-8">
         <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            <!-- Mensagem de Carregamento -->
             <div id="loading-message" class="col-span-full flex flex-col items-center justify-center py-16">
                 <div class="loader"></div>
                 <p class="text-pink-600 mt-4">Carregando nosso cardápio...</p>
@@ -63,15 +52,13 @@
     </main>
 
     <!-- Carrinho Modal -->
-    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-30">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-pink-600">Seu Pedido</h2>
                 <button id="close-cart" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
             </div>
-            <div id="cart-items" class="p-6 max-h-96 overflow-y-auto">
-                <!-- Itens do carrinho serão inseridos aqui -->
-            </div>
+            <div id="cart-items" class="p-6 max-h-96 overflow-y-auto"></div>
             <div class="p-6 border-t">
                 <div class="flex justify-between items-center font-bold text-xl">
                     <span>Total:</span>
@@ -83,14 +70,108 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Identificação -->
+    <div id="identification-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Como deseja continuar?</h2>
+            <p class="text-gray-600 mb-6">Você pode buscar seu cadastro ou continuar como visitante.</p>
+            <div class="space-y-4">
+                <button id="use-phone-button" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Usar número de celular
+                </button>
+                <button id="continue-guest-button" class="w-full bg-gray-600 text-white py-3 rounded-lg font-bold hover:bg-gray-700 transition-colors">
+                    Continuar sem cadastro
+                </button>
+                 <button id="close-identification-modal" class="text-sm text-gray-500 mt-4 hover:underline">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login via Celular -->
+    <div id="phone-login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-pink-600">Identificar Cliente</h2>
+                <button id="close-phone-login-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">Digite seu número de celular para buscar seu cadastro.</p>
+                <input id="phone-input" type="tel" placeholder="(00) 00000-0000" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <p id="phone-error" class="text-red-500 text-sm mt-2 hidden"></p>
+            </div>
+            <div class="p-6 border-t">
+                <button id="search-phone-button" class="w-full bg-pink-600 text-white py-3 rounded-lg font-bold hover:bg-pink-700 transition-colors">
+                    Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cadastro de Novo Cliente -->
+    <div id="new-customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-pink-600">Bem-vindo(a)!</h2>
+                <button id="close-new-customer-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">Vimos que é seu primeiro pedido conosco. Por favor, complete seu cadastro.</p>
+                <div class="space-y-4">
+                    <input id="new-customer-name" type="text" placeholder="Nome completo" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <input id="new-customer-dob" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Data de Nascimento" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <input id="new-customer-address" type="text" placeholder="Endereço completo (Rua, Nº, Bairro)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                </div>
+            </div>
+            <div class="p-6 border-t">
+                <button id="save-customer-and-checkout-button" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
+                    Salvar Cadastro e Finalizar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Informações do Visitante -->
+    <div id="guest-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-pink-600">Quase lá!</h2>
+                <button id="close-guest-info-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">Por favor, informe seu nome e endereço para entrega.</p>
+                <div class="space-y-4">
+                    <input id="guest-name" type="text" placeholder="Seu nome completo" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <input id="guest-address" type="text" placeholder="Seu endereço completo (Rua, Nº, Bairro)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                </div>
+            </div>
+            <div class="p-6 border-t">
+                <button id="send-whatsapp-button" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
     
-    <!-- Modal de Confirmação -->
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <!-- Modal de Confirmação (WhatsApp) -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
              <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Pedido Enviado!</h2>
-            <p class="text-gray-600">Obrigado! Entraremos em contato em breve para confirmar os detalhes do seu pedido.</p>
+            <p class="text-gray-600">Obrigado! Seu pedido foi registrado e a mensagem está pronta para ser enviada.</p>
             <button id="close-confirmation" class="bg-pink-600 text-white py-2 px-6 rounded-lg mt-6 font-bold hover:bg-pink-700 transition-colors">
+                Fechar
+            </button>
+        </div>
+    </div>
+    
+    <!-- NOVO: Modal de Confirmação da Plataforma -->
+    <div id="platform-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
+             <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Pedido Registrado!</h2>
+            <p class="text-gray-600">Obrigado! Seu pedido foi enviado diretamente para a nossa plataforma. Acompanharemos por aqui.</p>
+            <button id="close-platform-confirmation" class="bg-pink-600 text-white py-2 px-6 rounded-lg mt-6 font-bold hover:bg-pink-700 transition-colors">
                 Fechar
             </button>
         </div>
@@ -99,8 +180,11 @@
 
     <script>
         const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
-        let allProducts = []; // Para armazenar todos os produtos da API
+        const WHATSAPP_NUMBER = '5562991056075';
+        let allProducts = [];
+        let cart = [];
 
+        // Seleção de todos os elementos da página
         const productList = document.getElementById('product-list');
         const loadingMessage = document.getElementById('loading-message');
         const cartButton = document.getElementById('cart-button');
@@ -112,132 +196,171 @@
         const checkoutButton = document.getElementById('checkout-button');
         const confirmationModal = document.getElementById('confirmation-modal');
         const closeConfirmationButton = document.getElementById('close-confirmation');
+        const identificationModal = document.getElementById('identification-modal');
+        const usePhoneButton = document.getElementById('use-phone-button');
+        const continueGuestButton = document.getElementById('continue-guest-button');
+        const closeIdentificationModal = document.getElementById('close-identification-modal');
+        const guestInfoModal = document.getElementById('guest-info-modal');
+        const closeGuestInfoModal = document.getElementById('close-guest-info-modal');
+        const sendWhatsappButton = document.getElementById('send-whatsapp-button');
+        const guestNameInput = document.getElementById('guest-name');
+        const guestAddressInput = document.getElementById('guest-address');
+        const phoneLoginModal = document.getElementById('phone-login-modal');
+        const closePhoneLoginModal = document.getElementById('close-phone-login-modal');
+        const phoneInput = document.getElementById('phone-input');
+        const phoneError = document.getElementById('phone-error');
+        const searchPhoneButton = document.getElementById('search-phone-button');
+        const newCustomerModal = document.getElementById('new-customer-modal');
+        const closeNewCustomerModal = document.getElementById('close-new-customer-modal');
+        const newCustomerNameInput = document.getElementById('new-customer-name');
+        const newCustomerDobInput = document.getElementById('new-customer-dob');
+        const newCustomerAddressInput = document.getElementById('new-customer-address');
+        const saveCustomerAndCheckoutButton = document.getElementById('save-customer-and-checkout-button');
+        const platformConfirmationModal = document.getElementById('platform-confirmation-modal');
+        const closePlatformConfirmationButton = document.getElementById('close-platform-confirmation');
+        
+        // Funções da aplicação
+        async function fetchProducts() { /* ... Lógica inalterada ... */ }
+        function renderProducts(productsToRender) { /* ... Lógica inalterada ... */ }
+        function renderCart() { /* ... Lógica inalterada ... */ }
+        function addToCart(productId) { /* ... Lógica inalterada ... */ }
+        function removeFromCart(productId) { /* ... Lógica inalterada ... */ }
+        function updateQuantity(productId, change) { /* ... Lógica inalterada ... */ }
+        function updateCartInfo() { /* ... Lógica inalterada ... */ }
 
-        let cart = [];
-
-        // Função para buscar os produtos da API
+        // --- LÓGICA REUTILIZADA (sem alterações) ---
         async function fetchProducts() {
             try {
                 const response = await fetch(`${API_BASE_URL}/produtos`);
-                if (!response.ok) {
-                    throw new Error('Não foi possível carregar os produtos.');
-                }
-                const products = await response.json();
-                allProducts = products; // Armazena todos os produtos
-                
-                const deliveryProducts = products.filter(p => p.categoria === 'Delivery');
+                if (!response.ok) throw new Error('Não foi possível carregar os produtos.');
+                allProducts = await response.json();
+                const deliveryProducts = allProducts.filter(p => p.categoria === 'Delivery');
                 renderProducts(deliveryProducts);
-
             } catch (error) {
                 console.error("Erro ao buscar produtos:", error);
-                productList.innerHTML = `<p class="col-span-full text-center text-red-500">Erro ao carregar o cardápio. Tente novamente mais tarde.</p>`;
+                productList.innerHTML = `<p class="col-span-full text-center text-red-500">Erro ao carregar o cardápio.</p>`;
             } finally {
-                loadingMessage.style.display = 'none';
+                if(loadingMessage) loadingMessage.style.display = 'none';
             }
         }
-
         function renderProducts(productsToRender) {
             productList.innerHTML = '';
             if (productsToRender.length === 0) {
-                 productList.innerHTML = `<p class="col-span-full text-center text-gray-500">Nenhum produto para delivery encontrado no momento.</p>`;
+                 productList.innerHTML = `<p class="col-span-full text-center text-gray-500">Nenhum produto para delivery no momento.</p>`;
                  return;
             }
-
             productsToRender.forEach(product => {
                 const placeholderImage = 'https://placehold.co/600x400/FFC0CB/FFFFFF?text=Doce';
-                const productCard = `
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transform hover:scale-105 transition-transform duration-300">
-                        <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-full h-48 object-cover">
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-gray-800">${product.nome}</h3>
-                            <p class="text-gray-600 mt-2 flex-grow">${product.descricao || 'Sem descrição.'}</p>
-                            <div class="flex justify-between items-center mt-4">
-                                <span class="text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span>
-                                <button class="bg-pink-100 text-pink-700 font-bold py-2 px-4 rounded-lg hover:bg-pink-200 transition-colors" onclick="addToCart('${product.id}')">
-                                    Adicionar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                productList.innerHTML += productCard;
+                productList.innerHTML += `<div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transform hover:scale-105 transition-transform duration-300"><img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-full h-48 object-cover"><div class="p-6 flex flex-col flex-grow"><h3 class="text-xl font-bold text-gray-800">${product.nome}</h3><p class="text-gray-600 mt-2 flex-grow">${product.descricao || 'Sem descrição.'}</p><div class="flex justify-between items-center mt-4"><span class="text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span><button class="bg-pink-100 text-pink-700 font-bold py-2 px-4 rounded-lg hover:bg-pink-200 transition-colors" onclick="addToCart('${product.id}')">Adicionar</button></div></div></div>`;
             });
         }
-
         function renderCart() {
             cartItemsContainer.innerHTML = '';
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p class="text-gray-500">Seu carrinho está vazio.</p>';
-            } else {
-                cart.forEach(item => {
-                    const cartItem = document.createElement('div');
-                    cartItem.className = 'flex justify-between items-center mb-4 cart-item-enter-active';
-                    cartItem.innerHTML = `
-                        <div>
-                            <p class="font-bold">${item.nome}</p>
-                            <p class="text-sm text-gray-500">R$ ${item.preco.toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button class="px-2 rounded-md bg-gray-200" onclick="updateQuantity('${item.id}', -1)">-</button>
-                            <span>${item.quantity}</span>
-                            <button class="px-2 rounded-md bg-gray-200" onclick="updateQuantity('${item.id}', 1)">+</button>
-                            <button onclick="removeFromCart('${item.id}')"><i class="fa-solid fa-trash-alt text-red-500"></i></button>
-                        </div>
-                    `;
-                    cartItemsContainer.appendChild(cartItem);
-                });
-            }
+            if (cart.length === 0) { cartItemsContainer.innerHTML = '<p class="text-gray-500">Seu carrinho está vazio.</p>'; } else { cart.forEach(item => { const cartItem = document.createElement('div'); cartItem.className = 'flex justify-between items-center mb-4'; cartItem.innerHTML = `<div><p class="font-bold">${item.nome}</p><p class="text-sm text-gray-500">R$ ${item.preco.toFixed(2)}</p></div><div class="flex items-center gap-2"><button class="px-2 rounded-md bg-gray-200" onclick="updateQuantity('${item.id}', -1)">-</button><span>${item.quantity}</span><button class="px-2 rounded-md bg-gray-200" onclick="updateQuantity('${item.id}', 1)">+</button><button onclick="removeFromCart('${item.id}')"><i class="fa-solid fa-trash-alt text-red-500"></i></button></div>`; cartItemsContainer.appendChild(cartItem); }); }
             updateCartInfo();
         }
-
         function addToCart(productId) {
-            const product = allProducts.find(p => p.id === productId);
+            const product = allProducts.find(p => p.id === productId); if (!product) return;
             const existingItem = cart.find(item => item.id === productId);
-
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
+            if (existingItem) { existingItem.quantity++; } else { cart.push({ ...product, quantity: 1 }); }
             renderCart();
         }
-
-        function removeFromCart(productId) {
-            cart = cart.filter(item => item.id !== productId);
-            renderCart();
-        }
-
+        function removeFromCart(productId) { cart = cart.filter(item => item.id !== productId); renderCart(); }
         function updateQuantity(productId, change) {
             const item = cart.find(item => item.id === productId);
-            if (item) {
-                item.quantity += change;
-                if (item.quantity <= 0) {
-                    removeFromCart(productId);
-                } else {
-                    renderCart();
-                }
-            }
+            if (item) { item.quantity += change; if (item.quantity <= 0) { removeFromCart(productId); } else { renderCart(); } }
         }
-
         function updateCartInfo() {
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
             const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
             cartCount.textContent = totalItems;
             cartTotal.textContent = `R$ ${totalPrice.toFixed(2)}`;
         }
+        async function saveOrderToCRM(orderData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData),
+                });
+                if (!response.ok) throw new Error('Falha ao salvar o pedido no sistema.');
+            } catch (error) {
+                console.error('Erro ao salvar pedido no CRM:', error);
+            }
+        }
+        
+        // --- LÓGICA DE CHECKOUT ATUALIZADA ---
 
+        async function finalizeOrderForGuest(clientInfo) {
+            const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            const orderData = { ...clientInfo, itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), total: totalPrice, status: 'Pendente', origem: 'Cardapio Online' };
+            await saveOrderToCRM(orderData);
+            let message = `Olá! Gostaria de fazer o seguinte pedido:\n\n`;
+            cart.forEach(item => { message += `*${item.quantity}x* ${item.nome} - R$ ${(item.preco * item.quantity).toFixed(2)}\n`; });
+            message += `\n*Total:* R$ ${totalPrice.toFixed(2)}\n\n*Cliente:* ${clientInfo.clienteNome}\n*Endereço:* ${clientInfo.clienteEndereco}`;
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            [cartModal, guestInfoModal].forEach(modal => modal.classList.add('hidden'));
+            confirmationModal.classList.remove('hidden');
+            cart = []; renderCart();
+        }
+
+        async function finalizeOrderOnPlatform(clientInfo) {
+            const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            const orderData = { ...clientInfo, itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), total: totalPrice, status: 'Pendente', origem: 'Plataforma' };
+            await saveOrderToCRM(orderData);
+            [cartModal, phoneLoginModal, newCustomerModal].forEach(modal => modal.classList.add('hidden'));
+            platformConfirmationModal.classList.remove('hidden');
+            cart = []; renderCart();
+        }
+
+        // Event Listeners
         cartButton.addEventListener('click', () => cartModal.classList.remove('hidden'));
         closeCartButton.addEventListener('click', () => cartModal.classList.add('hidden'));
-        checkoutButton.addEventListener('click', () => {
-            cartModal.classList.add('hidden');
-            confirmationModal.classList.remove('hidden');
-            cart = [];
-            renderCart();
+        checkoutButton.addEventListener('click', () => { if (cart.length === 0) return; cartModal.classList.add('hidden'); identificationModal.classList.remove('hidden'); });
+        closeIdentificationModal.addEventListener('click', () => identificationModal.classList.add('hidden'));
+        usePhoneButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); phoneLoginModal.classList.remove('hidden'); phoneInput.value = ''; phoneError.classList.add('hidden'); });
+        closePhoneLoginModal.addEventListener('click', () => phoneLoginModal.classList.add('hidden'));
+        continueGuestButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); guestInfoModal.classList.remove('hidden'); });
+        closeGuestInfoModal.addEventListener('click', () => guestInfoModal.classList.add('hidden'));
+        
+        searchPhoneButton.addEventListener('click', async () => {
+            const phone = phoneInput.value.trim().replace(/\D/g, '');
+            if (phone.length < 10) { phoneError.textContent = 'Digite um número válido.'; phoneError.classList.remove('hidden'); return; }
+            phoneError.classList.add('hidden');
+            try {
+                const response = await fetch(`${API_BASE_URL}/clientes`);
+                const allClients = await response.json();
+                const foundClient = allClients.find(client => client.telefone && client.telefone.replace(/\D/g, '') === phone);
+                if (foundClient) { await finalizeOrderOnPlatform({ clienteId: foundClient.id, clienteNome: foundClient.nome, clienteEndereco: foundClient.endereco }); } 
+                else { phoneLoginModal.classList.add('hidden'); newCustomerModal.classList.remove('hidden'); }
+            } catch (error) { console.error("Erro ao buscar cliente:", error); phoneError.textContent = 'Erro ao conectar com o servidor.'; phoneError.classList.remove('hidden'); }
         });
-        closeConfirmationButton.addEventListener('click', () => confirmationModal.classList.add('hidden'));
 
-        // Inicia o processo ao carregar a página
+        closeNewCustomerModal.addEventListener('click', () => newCustomerModal.classList.add('hidden'));
+
+        saveCustomerAndCheckoutButton.addEventListener('click', async () => {
+            const name = newCustomerNameInput.value.trim(); const dob = newCustomerDobInput.value.trim(); const address = newCustomerAddressInput.value.trim(); const phone = phoneInput.value.trim();
+            if (!name || !dob || !address) { alert("Preencha todos os campos."); return; }
+            const newClientData = { nome: name, aniversario: dob, endereco: address, telefone: phone, status: 'Ativo' };
+            try {
+                const response = await fetch(`${API_BASE_URL}/clientes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClientData) });
+                if (!response.ok) throw new Error('Erro ao cadastrar cliente.');
+                const createdClient = await response.json();
+                await finalizeOrderOnPlatform({ clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: createdClient.endereco });
+            } catch (error) { console.error("Erro no cadastro:", error); alert("Não foi possível salvar seu cadastro."); }
+        });
+
+        sendWhatsappButton.addEventListener('click', async () => {
+            const name = guestNameInput.value.trim(); const address = guestAddressInput.value.trim();
+            if (!name || !address) { alert('Preencha seu nome e endereço.'); return; }
+            await finalizeOrderForGuest({ clienteNome: name, clienteEndereco: address });
+        });
+
+        closeConfirmationButton.addEventListener('click', () => confirmationModal.classList.add('hidden'));
+        closePlatformConfirmationButton.addEventListener('click', () => platformConfirmationModal.classList.add('hidden'));
         document.addEventListener('DOMContentLoaded', fetchProducts);
     </script>
 </body>
 </html>
+
