@@ -374,7 +374,26 @@ function App() {
     const [searchTerm, setSearchTerm] = useState(""); const [showModal, setShowModal] = useState(false); const [editingOrder, setEditingOrder] = useState(null); const [formData, setFormData] = useState({ clienteId: '', clienteNome: '', itens: [], total: 0, status: 'Pendente', origem: 'Manual' }); const [viewingOrder, setViewingOrder] = useState(null);
     const pedidosComNomes = (data.pedidos || []).map(pedido => { const cliente = data.clientes.find(c => c.id === pedido.clienteId); return { ...pedido, clienteNome: cliente ? cliente.nome : (pedido.clienteNome || 'Cliente não encontrado') } });
     const filteredOrders = pedidosComNomes.filter(p => (p.clienteNome && p.clienteNome.toLowerCase().includes(searchTerm.toLowerCase())) ).sort((a, b) => { const dateA = getJSDate(a.createdAt) || 0; const dateB = getJSDate(b.createdAt) || 0; return dateB - dateA; });
-    const resetForm = () => { setShowModal(false); setEditingOrder(null); setFormData({ clienteId: '', clienteNome: '', itens: [], total: 0, status: 'Pendente', origem: 'Manual' }); };
+    
+    const resetForm = () => {
+        setShowModal(false);
+        setEditingOrder(null);
+        setFormData({ clienteId: '', clienteNome: '', itens: [], total: 0, status: 'Pendente', origem: 'Manual' });
+    };
+
+    const handleNewOrder = () => {
+        setEditingOrder(null);
+        setFormData({
+            clienteId: '',
+            clienteNome: '',
+            itens: [],
+            total: 0,
+            status: 'Pendente',
+            origem: 'Manual'
+        });
+        setShowModal(true);
+    };
+
     const handleAddItemToOrder = (produto) => { setFormData(prev => { const existingItem = prev.itens.find(item => item.id === produto.id); let newItens; if (existingItem) { newItens = prev.itens.map(item => item.id === produto.id ? { ...item, quantity: item.quantity + 1 } : item); } else { newItens = [...prev.itens, { ...produto, quantity: 1 }]; } const newTotal = newItens.reduce((sum, item) => sum + (item.preco * item.quantity), 0); return { ...prev, itens: newItens, total: newTotal }; }); };
     const handleRemoveItemFromOrder = (produtoId) => { setFormData(prev => { const newItens = prev.itens.filter(item => item.id !== produtoId); const newTotal = newItens.reduce((sum, item) => sum + (item.preco * item.quantity), 0); return { ...prev, itens: newItens, total: newTotal }; }); };
     const handleSubmit = async (e) => {
@@ -395,7 +414,7 @@ function App() {
         <div className="p-6 space-y-6 bg-gradient-to-br from-pink-50/30 to-rose-50/30 min-h-screen">
             <div className="flex justify-between items-center">
                 <div><h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Gestão de Pedidos</h1><p className="text-gray-600 mt-1">Acompanhe e gerencie todos os pedidos</p></div>
-                <Button onClick={() => setShowModal(true)}><Plus className="w-4 h-4" /> Novo Pedido</Button>
+                <Button onClick={handleNewOrder}><Plus className="w-4 h-4" /> Novo Pedido</Button>
             </div>
             <div className="relative max-w-md"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Buscar por cliente..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl" /></div>
             <Table columns={columns} data={filteredOrders} actions={actions} />
