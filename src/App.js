@@ -120,12 +120,12 @@ function App() {
   const gainRef = useRef(null);
   const alarmIntervalRef = useRef(null);
 
-  const stopAlarm = useCallback(() => {
+  const stopAlarm = () => {
     if (alarmIntervalRef.current) { clearInterval(alarmIntervalRef.current); alarmIntervalRef.current = null; }
     if (oscillatorRef.current) { oscillatorRef.current.stop(); oscillatorRef.current = null; }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') { audioContextRef.current.close(); audioContextRef.current = null; }
     setIsAlarmActive(false);
-  }, []);
+  };
 
   const startAlarm = useCallback(() => {
     if (isAlarmActive) return; 
@@ -159,7 +159,7 @@ function App() {
         const userDocRef = doc(db, "users", authUser.uid);
         const userDoc = await getDoc(userDocRef);
         setUser({ auth: authUser, role: userDoc.exists() ? userDoc.data().role || 'Atendente' : 'Atendente' });
-        // Redirect to dashboard only on initial login, not on every page change.
+        // Redirect to dashboard only on initial login
         if (currentPage === 'pagina-inicial' && !user) {
             setCurrentPage('dashboard');
         }
@@ -170,7 +170,8 @@ function App() {
       setAuthLoading(false);
     });
     return () => unsubscribe();
-  }, [user, currentPage]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const handleLogin = async () => { try { setLoginError(''); await signInWithEmailAndPassword(auth, email, password); setShowLogin(false); setEmail(''); setPassword(''); setCurrentPage('dashboard'); } catch (error) { setLoginError('Email ou senha inválidos.'); } };
   const handleRegister = async () => { try { setLoginError(''); const userCredential = await createUserWithEmailAndPassword(auth, email, password); await setDoc(doc(db, "users", userCredential.user.uid), { email: userCredential.user.email, role: "Atendente" }); setShowLogin(false); setEmail(''); setPassword(''); setCurrentPage('dashboard'); } catch (error) { setLoginError(error.code === 'auth/email-already-in-use' ? 'Este email já está em uso.' : 'Erro ao registrar.'); } };
@@ -275,14 +276,26 @@ function App() {
     const [editingClient, setEditingClient] = useState(null);
     const [formData, setFormData] = useState({ nome: "", email: "", telefone: "", endereco: "", aniversario: "", status: "Ativo" });
     const filteredClients = (data.clientes || []).filter(c => (c.nome && c.nome.toLowerCase().includes(searchTerm.toLowerCase())) || (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) );
-    const resetForm = () => { setShowModal(false); setEditingClient(null); setFormData({ nome: "", email: "", telefone: "", endereco: "", aniversario: "", status: "Ativo" }); };
+    
+    const resetForm = () => {
+      setEditingClient(null);
+      setFormData({ nome: "", email: "", telefone: "", endereco: "", aniversario: "", status: "Ativo" });
+    };
+
+    const handleNewClient = () => {
+      resetForm();
+      setShowModal(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (editingClient) {
-            await updateItem('clientes', editingClient.id, formData);
+            const { id, ...updateData } = formData;
+            await updateItem('clientes', editingClient.id, updateData);
         } else {
             await addItem('clientes', { ...formData, totalCompras: 0 });
         }
+        setShowModal(false);
         resetForm();
     };
     const handleEdit = (client) => { setEditingClient(client); setFormData(client); setShowModal(true); };
@@ -307,10 +320,10 @@ function App() {
     const actions = [ { icon: Edit, label: "Editar", onClick: handleEdit }, { icon: Trash2, label: "Excluir", onClick: (row) => setConfirmDelete({ isOpen: true, onConfirm: () => deleteItem('clientes', row.id) }) } ];
     return (
       <div className="p-6 space-y-6 bg-gradient-to-br from-pink-50/30 to-rose-50/30 min-h-screen">
-        <div className="flex justify-between items-center"><div><h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Gestão de Clientes</h1><p className="text-gray-600 mt-1">Gerencie seus clientes</p></div><Button onClick={() => setShowModal(true)}><Plus className="w-4 h-4" /> Novo Cliente</Button></div>
+        <div className="flex justify-between items-center"><div><h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Gestão de Clientes</h1><p className="text-gray-600 mt-1">Gerencie seus clientes</p></div><Button onClick={handleNewClient}><Plus className="w-4 h-4" /> Novo Cliente</Button></div>
         <div className="relative max-w-md"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Buscar clientes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500" /></div>
         <Table columns={columns} data={filteredClients} actions={actions} />
-        <Modal isOpen={showModal} onClose={resetForm} title={editingClient ? "Editar Cliente" : "Novo Cliente"} size="lg"><form onSubmit={handleSubmit} className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><Input label="Nome Completo" type="text" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} required /><Input label="Email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} /><Input label="Telefone" type="tel" value={formData.telefone} onChange={(e) => setFormData({...formData, telefone: e.target.value})} /><Input label="Data de Aniversário" type="date" value={formData.aniversario} onChange={(e) => setFormData({...formData, aniversario: e.target.value})} /></div><Input label="Endereço" type="text" value={formData.endereco} onChange={(e) => setFormData({...formData, endereco: e.target.value})} /><div className="flex justify-end gap-3 pt-4"><Button variant="secondary" type="button" onClick={resetForm}>Cancelar</Button><Button type="submit"><Save className="w-4 h-4" />{editingClient ? "Salvar Alterações" : "Criar Cliente"}</Button></div></form></Modal>
+        <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title={editingClient ? "Editar Cliente" : "Novo Cliente"} size="lg"><form onSubmit={handleSubmit} className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><Input label="Nome Completo" type="text" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} required /><Input label="Email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} /><Input label="Telefone" type="tel" value={formData.telefone} onChange={(e) => setFormData({...formData, telefone: e.target.value})} /><Input label="Data de Aniversário" type="date" value={formData.aniversario} onChange={(e) => setFormData({...formData, aniversario: e.target.value})} /></div><Input label="Endereço" type="text" value={formData.endereco} onChange={(e) => setFormData({...formData, endereco: e.target.value})} /><div className="flex justify-end gap-3 pt-4"><Button variant="secondary" type="button" onClick={() => { setShowModal(false); resetForm(); }}>Cancelar</Button><Button type="submit"><Save className="w-4 h-4" />{editingClient ? "Salvar Alterações" : "Criar Cliente"}</Button></div></form></Modal>
       </div>
     );
   };
@@ -320,7 +333,25 @@ function App() {
     const filteredProducts = (data.produtos || []).filter(p => p.nome.toLowerCase().includes(searchTerm.toLowerCase()));
     const resetForm = () => { setShowModal(false); setEditingProduct(null); setFormData({ nome: "", categoria: "Delivery", preco: "", custo: "", estoque: "", status: "Ativo", descricao: "", tempoPreparo: "", imageUrl: "" }); setImageFile(null); setImagePreview(null); };
     const handleImageChange = (e) => { if (e.target.files[0]) { const file = e.target.files[0]; setImageFile(file); setImagePreview(URL.createObjectURL(file)); } };
-    const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); let imageUrl = formData.imageUrl || ""; if (imageFile) { const imageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`); await uploadBytes(imageRef, imageFile); imageUrl = await getDownloadURL(imageRef); } const productData = { ...formData, preco: parseFloat(formData.preco || 0), custo: parseFloat(formData.custo || 0), estoque: parseInt(formData.estoque || 0), imageUrl: imageUrl }; if (editingProduct) { await updateItem('produtos', editingProduct.id, productData); } else { await addItem('produtos', productData); } setIsUploading(false); resetForm(); };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsUploading(true);
+        let imageUrl = formData.imageUrl || "";
+        if (imageFile) {
+            const imageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+            await uploadBytes(imageRef, imageFile);
+            imageUrl = await getDownloadURL(imageRef);
+        }
+        const productData = { ...formData, preco: parseFloat(formData.preco || 0), custo: parseFloat(formData.custo || 0), estoque: parseInt(formData.estoque || 0), imageUrl: imageUrl };
+        if (editingProduct) {
+            const { id, ...updateData } = productData;
+            await updateItem('produtos', editingProduct.id, updateData);
+        } else {
+            await addItem('produtos', productData);
+        }
+        setIsUploading(false);
+        resetForm();
+    };
     const handleEdit = (product) => { setEditingProduct(product); setFormData({ ...product, preco: String(product.preco), custo: String(product.custo), estoque: String(product.estoque) }); setImagePreview(product.imageUrl || null); setShowModal(true); };
     const columns = [ { header: "Produto", render: (row) => (<div className="flex items-center gap-3"><img src={row.imageUrl || 'https://placehold.co/40x40/FFC0CB/FFFFFF?text=Doce'} alt={row.nome} className="w-10 h-10 rounded-xl object-cover shadow-md" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/FFC0CB/FFFFFF?text=Erro'; }}/><div><p className="font-semibold text-gray-800">{row.nome}</p><p className="text-sm text-gray-500">{row.categoria}</p></div></div>)}, { header: "Preço", render: (row) => <span className="font-semibold text-green-600">R$ {(row.preco || 0).toFixed(2)}</span> }, { header: "Estoque", render: (row) => <span className={`font-medium ${row.estoque < 10 ? 'text-red-600' : 'text-gray-800'}`}>{row.estoque} un</span> }, { header: "Status", render: (row) => <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{row.status}</span> } ];
     const actions = [ { icon: Edit, label: "Editar", onClick: handleEdit }, { icon: Trash2, label: "Excluir", onClick: (row) => setConfirmDelete({ isOpen: true, onConfirm: () => deleteItem('produtos', row.id) }) } ];
@@ -376,21 +407,12 @@ function App() {
     const filteredOrders = pedidosComNomes.filter(p => (p.clienteNome && p.clienteNome.toLowerCase().includes(searchTerm.toLowerCase())) ).sort((a, b) => { const dateA = getJSDate(a.createdAt) || 0; const dateB = getJSDate(b.createdAt) || 0; return dateB - dateA; });
     
     const resetForm = () => {
-        setShowModal(false);
         setEditingOrder(null);
         setFormData({ clienteId: '', clienteNome: '', itens: [], total: 0, status: 'Pendente', origem: 'Manual' });
     };
 
     const handleNewOrder = () => {
-        setEditingOrder(null);
-        setFormData({
-            clienteId: '',
-            clienteNome: '',
-            itens: [],
-            total: 0,
-            status: 'Pendente',
-            origem: 'Manual'
-        });
+        resetForm();
         setShowModal(true);
     };
 
@@ -400,10 +422,12 @@ function App() {
         e.preventDefault();
         const orderData = { ...formData, clienteNome: data.clientes.find(c => c.id === formData.clienteId)?.nome };
         if (editingOrder) {
-            await updateItem('pedidos', editingOrder.id, orderData);
+            const { id, ...updateData } = orderData;
+            await updateItem('pedidos', editingOrder.id, updateData);
         } else {
             await addItem('pedidos', orderData);
         }
+        setShowModal(false);
         resetForm();
     };
     const handleEdit = (order) => { setEditingOrder(order); setFormData(order); setShowModal(true); };
@@ -418,7 +442,7 @@ function App() {
             </div>
             <div className="relative max-w-md"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" placeholder="Buscar por cliente..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl" /></div>
             <Table columns={columns} data={filteredOrders} actions={actions} />
-            <Modal isOpen={showModal} onClose={resetForm} title={editingOrder ? "Editar Pedido" : "Novo Pedido"} size="xl">
+            <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title={editingOrder ? "Editar Pedido" : "Novo Pedido"} size="xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Select label="Cliente" value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})} required><option value="">Selecione um cliente</option>{data.clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</Select>
@@ -428,7 +452,7 @@ function App() {
                         <div className="space-y-2"><h3 className="font-semibold">Adicionar Produtos</h3><div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-1">{data.produtos.map(p => (<div key={p.id} className="flex justify-between items-center p-2 rounded hover:bg-gray-50"><span>{p.nome} - R$ {p.preco.toFixed(2)}</span><Button size="sm" variant="secondary" onClick={() => handleAddItemToOrder(p)}>+</Button></div>))}</div></div>
                         <div className="space-y-2"><h3 className="font-semibold">Itens no Pedido</h3><div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-1">{formData.itens.length === 0 ? <p className="text-sm text-gray-500 text-center p-4">Nenhum item</p> : formData.itens.map(item => (<div key={item.id} className="flex justify-between items-center p-2 rounded bg-pink-50"><span>{item.quantity}x {item.nome}</span><div className="flex items-center gap-2"><span className="text-sm">R$ {(item.preco * item.quantity).toFixed(2)}</span><button type="button" onClick={() => handleRemoveItemFromOrder(item.id)} className="text-red-500"><Trash2 size={14}/></button></div></div>))}</div><div className="text-right font-bold text-lg mt-2">Total: R$ {formData.total.toFixed(2)}</div></div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4"><Button variant="secondary" type="button" onClick={resetForm}>Cancelar</Button><Button type="submit"><Save className="w-4 h-4" />{editingOrder ? "Salvar Alterações" : "Criar Pedido"}</Button></div>
+                    <div className="flex justify-end gap-3 pt-4"><Button variant="secondary" type="button" onClick={() => { setShowModal(false); resetForm(); }}>Cancelar</Button><Button type="submit"><Save className="w-4 h-4" />{editingOrder ? "Salvar Alterações" : "Criar Pedido"}</Button></div>
                 </form>
             </Modal>
             <Modal isOpen={!!viewingOrder} onClose={() => setViewingOrder(null)} title={`Detalhes do Pedido - ${viewingOrder?.clienteNome}`} size="lg">{viewingOrder && <div className="space-y-4"><p><strong>Status:</strong> <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(viewingOrder.status)}`}>{viewingOrder.status}</span></p><p><strong>Data:</strong> {viewingOrder.createdAt ? new Date(viewingOrder.createdAt).toLocaleString('pt-BR') : '-'}</p><p><strong>Origem:</strong> {viewingOrder.origem}</p><h4 className="font-semibold pt-4 border-t">Itens:</h4><ul className="list-disc list-inside space-y-1">{viewingOrder.itens.map(item => (<li key={item.id}>{item.quantity}x {item.nome} - R$ {(item.preco * item.quantity).toFixed(2)}</li>))}</ul><p className="text-right font-bold text-xl pt-4 border-t">Total: R$ {viewingOrder.total.toFixed(2)}</p></div>}</Modal>
