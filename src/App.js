@@ -292,7 +292,7 @@ function App() {
   const currentUserRole = user ? user.role : null;
   const menuItems = allMenuItems.filter(item => item.roles.includes(currentUserRole));
   
-  const ImageSlider = ({ images, onImageClick }) => { const [currentIndex, setCurrentIndex] = useState(0); const nextSlide = useCallback(() => { setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length); }, [images.length]); useEffect(() => { const timer = setInterval(nextSlide, 5000); return () => clearInterval(timer); }, [nextSlide]); return ( <div className="h-64 md:h-96 w-full m-auto relative group rounded-2xl overflow-hidden shadow-lg"> <div style={{ backgroundImage: `url(${images[currentIndex]})` }} className="w-full h-full bg-center bg-cover duration-500 cursor-pointer" onClick={() => onImageClick(images[currentIndex])}></div> </div> ); };
+  const ImageSlider = ({ images, onImageClick }) => { const [currentIndex, setCurrentIndex] = useState(0); const nextSlide = useCallback(() => { setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length); }, [images.length]); useEffect(() => { const timer = setInterval(nextSlide, 5000); return () => clearInterval(timer); }, [nextSlide]); return ( <div className="h-64 md:h-96 w-full m-auto relative group rounded-2xl overflow-hidden shadow-lg bg-pink-50/30"> <div style={{ backgroundImage: `url(${images[currentIndex]})` }} className="w-full h-full bg-center bg-contain bg-no-repeat duration-500 cursor-pointer" onClick={() => onImageClick(images[currentIndex])}></div> </div> ); };
   
   // Componentes de Páginas
   const PaginaInicial = () => {
@@ -661,8 +661,8 @@ function App() {
             <Modal isOpen={!!viewingOrder} onClose={() => setViewingOrder(null)} title="Detalhes do Pedido" size="lg">
                 {viewingOrder && (() => {
                     const cliente = data.clientes.find(c => c.id === viewingOrder.clienteId);
-                    const endereco = cliente?.endereco || viewingOrder.clienteEndereco || 'Não informado';
-                    const telefone = cliente?.telefone || viewingOrder.telefone || '';
+                    const endereco = viewingOrder.clienteEndereco || cliente?.enderecos?.[0] || 'Não informado';
+                    const telefone = viewingOrder.telefone || cliente?.telefone || '';
                     
                     const handleSendToWhatsApp = () => {
                         if (!telefone) return;
@@ -672,6 +672,7 @@ function App() {
 
                         let message = `Olá, *${viewingOrder.clienteNome}*!\n\n`;
                         message += `Aqui está um resumo do seu pedido na Ana Guimarães Doceria:\n\n`;
+                        message += `*Endereço de Entrega:*\n${endereco}\n\n`;
                         message += `*Itens do Pedido:*\n`;
                         viewingOrder.itens.forEach(item => {
                             message += `  • ${item.quantity}x ${item.nome}\n`;
@@ -679,7 +680,7 @@ function App() {
                         message += `\n`;
                         message += `*Total:* R$ ${(viewingOrder.total || 0).toFixed(2)}\n`;
                         message += `*Status:* ${viewingOrder.status}\n\n`;
-                        message += `Agradecemos a sua preferência! ❤`;
+                        message += `Por favor, confirme se o endereço está correto para a entrega. Agradecemos a sua preferência! ❤`;
 
                         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
