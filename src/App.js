@@ -455,7 +455,82 @@ function App() {
                     <div className="flex justify-end gap-3 pt-4"><Button variant="secondary" type="button" onClick={() => { setShowModal(false); resetForm(); }}>Cancelar</Button><Button type="submit"><Save className="w-4 h-4" />{editingOrder ? "Salvar Alterações" : "Criar Pedido"}</Button></div>
                 </form>
             </Modal>
-            <Modal isOpen={!!viewingOrder} onClose={() => setViewingOrder(null)} title={`Detalhes do Pedido - ${viewingOrder?.clienteNome}`} size="lg">{viewingOrder && <div className="space-y-4"><p><strong>Status:</strong> <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(viewingOrder.status)}`}>{viewingOrder.status}</span></p><p><strong>Data:</strong> {viewingOrder.createdAt ? new Date(viewingOrder.createdAt).toLocaleString('pt-BR') : '-'}</p><p><strong>Origem:</strong> {viewingOrder.origem}</p><h4 className="font-semibold pt-4 border-t">Itens:</h4><ul className="list-disc list-inside space-y-1">{viewingOrder.itens.map(item => (<li key={item.id}>{item.quantity}x {item.nome} - R$ {(item.preco * item.quantity).toFixed(2)}</li>))}</ul><p className="text-right font-bold text-xl pt-4 border-t">Total: R$ {viewingOrder.total.toFixed(2)}</p></div>}</Modal>
+            <Modal isOpen={!!viewingOrder} onClose={() => setViewingOrder(null)} title="Detalhes do Pedido" size="lg">
+                {viewingOrder && (() => {
+                    const cliente = data.clientes.find(c => c.id === viewingOrder.clienteId);
+                    const endereco = cliente?.endereco || viewingOrder.clienteEndereco || 'Não informado';
+                    const telefone = cliente?.telefone || viewingOrder.telefone || '';
+                    
+                    const handleSendToWhatsApp = () => {
+                        if (!telefone) return;
+            
+                        const formattedPhone = telefone.replace(/\D/g, '');
+                        const whatsappNumber = formattedPhone.length > 11 ? formattedPhone : `55${formattedPhone}`;
+
+                        let message = `Olá, *${viewingOrder.clienteNome}*!\n\n`;
+                        message += `Aqui está um resumo do seu pedido na Ana Guimarães Doceria:\n\n`;
+                        message += `*Itens do Pedido:*\n`;
+                        viewingOrder.itens.forEach(item => {
+                            message += `  • ${item.quantity}x ${item.nome}\n`;
+                        });
+                        message += `\n`;
+                        message += `*Total:* R$ ${(viewingOrder.total || 0).toFixed(2)}\n`;
+                        message += `*Status:* ${viewingOrder.status}\n\n`;
+                        message += `Agradecemos a sua preferência! ❤`;
+
+                        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                    };
+
+                    return (
+                        <div className="space-y-4 text-sm text-gray-700">
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                                <h3 className="font-bold text-lg text-gray-800 mb-2">Informações do Cliente</h3>
+                                <p><strong>Nome:</strong> {viewingOrder.clienteNome}</p>
+                                <p><strong>Endereço:</strong> {endereco}</p>
+                                <p><strong>Telefone:</strong> {telefone || 'Não informado'}</p>
+                            </div>
+
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                                <h3 className="font-bold text-lg text-gray-800 mb-2">Informações do Pedido</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <p><strong>Status:</strong> <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusClass(viewingOrder.status)}`}>{viewingOrder.status}</span></p>
+                                    <p><strong>Data:</strong> {viewingOrder.createdAt ? new Date(viewingOrder.createdAt).toLocaleString('pt-BR') : '-'}</p>
+                                    <p><strong>Origem:</strong> {viewingOrder.origem}</p>
+                                    <p><strong>Pagamento:</strong> {viewingOrder.formaPagamento || 'Não informado'}</p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-bold text-lg text-gray-800 mt-4 mb-2">Itens do Pedido:</h4>
+                                <ul className="space-y-2">
+                                    {viewingOrder.itens.map(item => (
+                                        <li key={item.id} className="flex justify-between items-center p-2 bg-pink-50/50 rounded-md">
+                                            <span>{item.quantity}x {item.nome}</span>
+                                            <span>R$ {(item.preco * item.quantity).toFixed(2)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            
+                            <p className="text-right font-bold text-2xl text-pink-600 pt-4 border-t mt-4">
+                                Total: R$ {(viewingOrder.total || 0).toFixed(2)}
+                            </p>
+
+                            <div className="flex justify-end pt-4 mt-4 border-t">
+                                <Button 
+                                    onClick={handleSendToWhatsApp} 
+                                    disabled={!telefone} 
+                                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:transform-none"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    Enviar para Cliente
+                                </Button>
+                            </div>
+                        </div>
+                    );
+                })()}
+            </Modal>
         </div>
     );
   }
