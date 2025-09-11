@@ -30,6 +30,7 @@
 </head>
 <body class="bg-pink-50">
 
+    <!-- Cabeçalho -->
     <header class="bg-white shadow-md sticky top-0 z-20">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -43,6 +44,7 @@
         </div>
     </header>
 
+    <!-- Conteúdo Principal -->
     <main class="container mx-auto px-6 py-8">
         <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             <div id="loading-message" class="col-span-full flex flex-col items-center justify-center py-16">
@@ -52,6 +54,7 @@
         </div>
     </main>
 
+    <!-- Carrinho Modal -->
     <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-30">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -71,6 +74,7 @@
         </div>
     </div>
 
+    <!-- Modal de Identificação -->
     <div id="identification-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Como deseja continuar?</h2>
@@ -87,6 +91,7 @@
         </div>
     </div>
 
+    <!-- Modal de Login via Celular -->
     <div id="phone-login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -105,29 +110,65 @@
             </div>
         </div>
     </div>
-
-    <div id="new-customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+    
+    <!-- Modal de Gestão de Endereço -->
+    <div id="address-management-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-pink-600">Bem-vindo(a)!</h2>
-                <button id="close-new-customer-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            <div class="p-6 border-b">
+                 <h2 id="address-modal-title" class="text-2xl font-bold text-pink-600">Confirmar Endereço</h2>
             </div>
             <div class="p-6">
-                <p class="text-gray-600 mb-4">Vimos que é seu primeiro pedido conosco. Por favor, complete seu cadastro.</p>
-                <div class="space-y-4">
-                    <input id="new-customer-name" type="text" placeholder="Nome completo" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
-                    <input id="new-customer-dob" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Data de Nascimento" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
-                    <input id="new-customer-address" type="text" placeholder="Endereço completo (Rua, Nº, Bairro)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <p class="text-gray-600 mb-4">Encontramos endereços no seu cadastro, <strong id="confirm-customer-name"></strong>. Selecione um para a entrega:</p>
+                <div id="address-list" class="space-y-3 max-h-48 overflow-y-auto">
+                    <!-- Endereços serão injetados aqui -->
+                </div>
+                <div id="add-new-address-container" class="mt-4 hidden">
+                    <label for="new-address-input" class="block text-sm font-medium text-gray-700 mb-1">Novo endereço para salvar</label>
+                    <div class="flex gap-2">
+                        <input id="new-address-input" type="text" placeholder="Rua, Nº, Bairro, Cidade" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                        <button id="save-new-address-button" class="bg-green-500 text-white py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition-colors flex-shrink-0">Salvar e Usar</button>
+                    </div>
                 </div>
             </div>
+            <div class="p-6 border-t space-y-3">
+                <button id="add-new-address-button" class="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i>Adicionar Novo Endereço
+                </button>
+                <button id="edit-profile-button" class="w-full bg-yellow-500 text-white py-3 px-4 rounded-lg font-bold hover:bg-yellow-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-pen"></i>Editar Perfil
+                </button>
+                <button id="close-address-management-modal" class="text-sm text-gray-500 mt-2 hover:underline w-full text-center">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Editar Perfil -->
+    <div id="customer-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-pink-600">Editar Perfil</h2>
+                <button id="close-customer-profile-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                 <div>
+                    <label for="profile-name" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input id="profile-name" type="text" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                 </div>
+                 <div>
+                    <label for="profile-dob" class="block text-sm font-medium text-gray-700">Data de Nascimento</label>
+                    <input id="profile-dob" type="date" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                 </div>
+            </div>
             <div class="p-6 border-t">
-                <button id="save-customer-and-checkout-button" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
-                    Salvar Cadastro e Finalizar Pedido
+                <button id="save-profile-button" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
+                    Salvar Alterações
                 </button>
             </div>
         </div>
     </div>
 
+
+    <!-- Modal para Informações do Visitante -->
     <div id="guest-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -158,6 +199,7 @@
         </div>
     </div>
     
+    <!-- Modal de Confirmação (WhatsApp) -->
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
              <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
@@ -169,6 +211,7 @@
         </div>
     </div>
     
+    <!-- Modal de Confirmação da Plataforma -->
     <div id="platform-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
              <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
@@ -180,6 +223,7 @@
         </div>
     </div>
 
+    <!-- Notificação Toast -->
     <div id="toast" class="fixed bottom-5 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg hidden opacity-0 transform translate-y-2">
         <p id="toast-message"></p>
     </div>
@@ -190,6 +234,7 @@
         const WHATSAPP_NUMBER = '5562991056075';
         let allProducts = [];
         let cart = [];
+        let currentClient = null;
 
         // --- Seleção de todos os elementos ---
         const productList = document.getElementById('product-list');
@@ -217,12 +262,24 @@
         const phoneInput = document.getElementById('phone-input');
         const phoneError = document.getElementById('phone-error');
         const searchPhoneButton = document.getElementById('search-phone-button');
-        const newCustomerModal = document.getElementById('new-customer-modal');
-        const closeNewCustomerModal = document.getElementById('close-new-customer-modal');
-        const newCustomerNameInput = document.getElementById('new-customer-name');
-        const newCustomerDobInput = document.getElementById('new-customer-dob');
-        const newCustomerAddressInput = document.getElementById('new-customer-address');
-        const saveCustomerAndCheckoutButton = document.getElementById('save-customer-and-checkout-button');
+        
+        const addressManagementModal = document.getElementById('address-management-modal');
+        const addressModalTitle = document.getElementById('address-modal-title');
+        const confirmCustomerName = document.getElementById('confirm-customer-name');
+        const addressList = document.getElementById('address-list');
+        const addNewAddressContainer = document.getElementById('add-new-address-container');
+        const newAddressInput = document.getElementById('new-address-input');
+        const addNewAddressButton = document.getElementById('add-new-address-button');
+        const saveNewAddressButton = document.getElementById('save-new-address-button');
+        const editProfileButton = document.getElementById('edit-profile-button');
+        const closeAddressManagementModal = document.getElementById('close-address-management-modal');
+
+        const customerProfileModal = document.getElementById('customer-profile-modal');
+        const profileNameInput = document.getElementById('profile-name');
+        const profileDobInput = document.getElementById('profile-dob');
+        const saveProfileButton = document.getElementById('save-profile-button');
+        const closeCustomerProfileModal = document.getElementById('close-customer-profile-modal');
+
         const confirmationModal = document.getElementById('confirmation-modal');
         const closeConfirmationButton = document.getElementById('close-confirmation');
         const platformConfirmationModal = document.getElementById('platform-confirmation-modal');
@@ -267,7 +324,6 @@
                 const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
                 const isOutOfStock = hasStock && product.estoque <= 0;
 
-                // ** NOVO LAYOUT DO PRODUTO **
                 productList.innerHTML += `
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden flex sm:flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
                         <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-28 h-28 sm:w-full sm:h-48 object-cover flex-shrink-0">
@@ -342,7 +398,7 @@
             const item = cart.find(item => item.id === productId);
             if (!item) return;
             
-            if (change > 0) { // Apenas checa o estoque ao aumentar a quantidade
+            if (change > 0) {
                 const product = allProducts.find(p => p.id === productId);
                 if (!product) return;
                 
@@ -403,16 +459,56 @@
             window.open(whatsappUrl, '_blank');
             [cartModal, guestInfoModal].forEach(modal => modal.classList.add('hidden'));
             confirmationModal.classList.remove('hidden');
-            cart = []; renderCart();
+            cart = []; 
+            currentClient = null;
+            renderCart();
         }
 
         async function finalizeOrderOnPlatform(clientInfo) {
             const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
             const orderData = { ...clientInfo, itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), total: totalPrice, status: 'Pendente', origem: 'Plataforma' };
             await saveOrderToCRM(orderData);
-            [cartModal, phoneLoginModal, newCustomerModal].forEach(modal => modal.classList.add('hidden'));
+            addressManagementModal.classList.add('hidden');
             platformConfirmationModal.classList.remove('hidden');
-            cart = []; renderCart();
+            cart = []; 
+            currentClient = null;
+            renderCart();
+        }
+
+        function openAddressManagementModal(client) {
+            currentClient = client;
+            addressList.innerHTML = '';
+            addNewAddressContainer.classList.add('hidden');
+            
+            confirmCustomerName.textContent = client.nome;
+            
+            if (client.enderecos && client.enderecos.length > 0) {
+                addressModalTitle.textContent = `Confirmar Endereço`;
+                client.enderecos.forEach(address => {
+                    const addressDiv = document.createElement('div');
+                    addressDiv.className = 'bg-gray-100 p-4 rounded-lg';
+                    
+                    const addressP = document.createElement('p');
+                    addressP.className = 'font-semibold';
+                    addressP.textContent = address;
+                    addressDiv.appendChild(addressP);
+
+                    const useButton = document.createElement('button');
+                    useButton.className = 'w-full mt-2 bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600';
+                    useButton.textContent = 'Sim, usar este endereço';
+                    useButton.onclick = () => {
+                        finalizeOrderOnPlatform({ clienteId: client.id, clienteNome: client.nome, clienteEndereco: address });
+                    };
+                    addressDiv.appendChild(useButton);
+                    addressList.appendChild(addressDiv);
+                });
+            } else {
+                addressModalTitle.textContent = 'Cadastrar Endereço';
+                addressList.innerHTML = '<p class="text-center text-gray-500">Nenhum endereço cadastrado. Adicione um para continuar.</p>';
+                addNewAddressContainer.classList.remove('hidden');
+            }
+            newAddressInput.value = '';
+            addressManagementModal.classList.remove('hidden');
         }
 
         // --- Event Listeners ---
@@ -421,7 +517,7 @@
         checkoutButton.addEventListener('click', () => { if (cart.length === 0) return; cartModal.classList.add('hidden'); identificationModal.classList.remove('hidden'); });
         closeIdentificationModal.addEventListener('click', () => identificationModal.classList.add('hidden'));
         usePhoneButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); phoneLoginModal.classList.remove('hidden'); phoneInput.value = ''; phoneError.classList.add('hidden'); });
-        closePhoneLoginModal.addEventListener('click', () => phoneLoginModal.classList.add('hidden'));
+        closePhoneLoginModal.addEventListener('click', () => { phoneLoginModal.classList.add('hidden'); currentClient = null; });
         continueGuestButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); guestInfoModal.classList.remove('hidden'); });
         closeGuestInfoModal.addEventListener('click', () => guestInfoModal.classList.add('hidden'));
         
@@ -433,24 +529,107 @@
                 const response = await fetch(`${API_BASE_URL}/clientes`);
                 const allClients = await response.json();
                 const foundClient = allClients.find(client => client.telefone && client.telefone.replace(/\D/g, '') === phone);
-                if (foundClient) { await finalizeOrderOnPlatform({ clienteId: foundClient.id, clienteNome: foundClient.nome, clienteEndereco: foundClient.endereco }); } 
-                else { phoneLoginModal.classList.add('hidden'); newCustomerModal.classList.remove('hidden'); }
+                
+                phoneLoginModal.classList.add('hidden');
+
+                if (foundClient) {
+                    openAddressManagementModal(foundClient);
+                } 
+                else { 
+                    currentClient = { nome: 'Novo Cliente', telefone: phone, enderecos: [] };
+                    openAddressManagementModal(currentClient);
+                }
             } catch (error) { console.error("Erro ao buscar cliente:", error); phoneError.textContent = 'Erro ao conectar com o servidor.'; phoneError.classList.remove('hidden'); }
         });
+        
+        closeAddressManagementModal.addEventListener('click', () => { addressManagementModal.classList.add('hidden'); currentClient = null; });
+        addNewAddressButton.addEventListener('click', () => addNewAddressContainer.classList.toggle('hidden'));
+        
+        saveNewAddressButton.addEventListener('click', async () => {
+            const newAddress = newAddressInput.value.trim();
+            if (!newAddress) {
+                showToast("Por favor, digite um novo endereço.");
+                return;
+            }
 
-        closeNewCustomerModal.addEventListener('click', () => newCustomerModal.classList.add('hidden'));
-
-        saveCustomerAndCheckoutButton.addEventListener('click', async () => {
-            const name = newCustomerNameInput.value.trim(); const dob = newCustomerDobInput.value.trim(); const address = newCustomerAddressInput.value.trim(); const phone = phoneInput.value.trim();
-            if (!name || !dob || !address) { alert("Preencha todos os campos."); return; }
-            const newClientData = { nome: name, aniversario: dob, endereco: address, telefone: phone, status: 'Ativo' };
             try {
-                const response = await fetch(`${API_BASE_URL}/clientes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClientData) });
-                if (!response.ok) throw new Error('Erro ao cadastrar cliente.');
-                const createdClient = await response.json();
-                await finalizeOrderOnPlatform({ clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: createdClient.endereco });
-            } catch (error) { console.error("Erro no cadastro:", error); alert("Não foi possível salvar seu cadastro."); }
+                if (currentClient && currentClient.id) { // Cliente existente
+                    const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ newAddress: newAddress })
+                    });
+                    if (!response.ok) throw new Error("Não foi possível salvar o novo endereço.");
+                    finalizeOrderOnPlatform({ clienteId: currentClient.id, clienteNome: currentClient.nome, clienteEndereco: newAddress });
+                } else { // Novo cliente
+                     if (currentClient.nome === 'Novo Cliente') {
+                        customerProfileModal.classList.remove('hidden');
+                        showToast('Por favor, preencha seu nome para o cadastro.');
+                        return; // Impede a finalização até que o nome seja preenchido
+                    }
+                    const newClientData = { nome: currentClient.nome, aniversario: currentClient.aniversario || '', telefone: currentClient.telefone, enderecos: [newAddress], status: 'Ativo' };
+                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newClientData)
+                    });
+                    if (!createResponse.ok) throw new Error("Não foi possível criar o cadastro.");
+                    const createdClient = await createResponse.json();
+                    
+                    finalizeOrderOnPlatform({ clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: newAddress });
+                }
+            } catch(error) {
+                console.error("Erro ao salvar endereço:", error);
+                showToast("Ocorreu um erro ao salvar o endereço.");
+            }
         });
+
+        editProfileButton.addEventListener('click', () => {
+            if (!currentClient) return;
+            profileNameInput.value = currentClient.nome === 'Novo Cliente' ? '' : currentClient.nome;
+            profileDobInput.value = currentClient.aniversario || '';
+            customerProfileModal.classList.remove('hidden');
+        });
+
+        closeCustomerProfileModal.addEventListener('click', () => customerProfileModal.classList.add('hidden'));
+
+        saveProfileButton.addEventListener('click', async () => {
+            const newName = profileNameInput.value.trim();
+            const newDob = profileDobInput.value.trim();
+
+            if (!newName) {
+                showToast("O nome é obrigatório.");
+                return;
+            }
+            
+            const updatedData = { nome: newName, aniversario: newDob };
+
+            try {
+                 if (!currentClient.id) { // Criar novo cliente
+                    currentClient.nome = newName;
+                    currentClient.aniversario = newDob;
+                    showToast("Dados salvos! Agora adicione um endereço.");
+                 } else { // Atualizar cliente existente
+                    const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+                    if (!response.ok) throw new Error("Não foi possível atualizar o perfil.");
+                     currentClient = await response.json();
+                     showToast("Perfil atualizado com sucesso!");
+                 }
+
+                customerProfileModal.classList.add('hidden');
+                addressManagementModal.classList.add('hidden'); // Fecha o modal de endereço antigo
+                openAddressManagementModal(currentClient); // Reabre com os dados atualizados
+
+            } catch(error) {
+                console.error("Erro ao salvar perfil:", error);
+                showToast("Ocorreu um erro ao salvar o perfil.");
+            }
+        });
+
 
         sendWhatsappButton.addEventListener('click', async () => {
             const name = guestNameInput.value.trim(); 
@@ -474,7 +653,7 @@
                 if (client) {
                     clientId = client.id;
                 } else {
-                    const newClientData = { nome: name, endereco: address, telefone: phone, status: 'Ativo' };
+                    const newClientData = { nome: name, enderecos: [address], telefone: phone, status: 'Ativo' };
                     const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -498,9 +677,10 @@
             }
         });
 
-        closeConfirmationButton.addEventListener('click', () => confirmationModal.classList.add('hidden'));
-        closePlatformConfirmationButton.addEventListener('click', () => platformConfirmationModal.classList.add('hidden'));
+        closeConfirmationButton.addEventListener('click', () => { confirmationModal.classList.add('hidden'); currentClient = null; });
+        closePlatformConfirmationButton.addEventListener('click', () => { platformConfirmationModal.classList.add('hidden'); currentClient = null; });
         document.addEventListener('DOMContentLoaded', fetchProducts);
     </script>
 </body>
 </html>
+
