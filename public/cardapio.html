@@ -30,7 +30,6 @@
 </head>
 <body class="bg-pink-50">
 
-    <!-- Cabeçalho -->
     <header class="bg-white shadow-md sticky top-0 z-20">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -44,9 +43,8 @@
         </div>
     </header>
 
-    <!-- Conteúdo Principal -->
     <main class="container mx-auto px-6 py-8">
-        <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             <div id="loading-message" class="col-span-full flex flex-col items-center justify-center py-16">
                 <div class="loader"></div>
                 <p class="text-pink-600 mt-4">Carregando nosso cardápio...</p>
@@ -54,7 +52,6 @@
         </div>
     </main>
 
-    <!-- Carrinho Modal -->
     <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-30">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -74,7 +71,6 @@
         </div>
     </div>
 
-    <!-- Modal de Identificação -->
     <div id="identification-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Como deseja continuar?</h2>
@@ -91,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Modal de Login via Celular -->
     <div id="phone-login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -111,7 +106,6 @@
         </div>
     </div>
 
-    <!-- Modal de Cadastro de Novo Cliente -->
     <div id="new-customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -134,7 +128,6 @@
         </div>
     </div>
 
-    <!-- Modal para Informações do Visitante -->
     <div id="guest-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div class="p-6 border-b flex justify-between items-center">
@@ -165,7 +158,6 @@
         </div>
     </div>
     
-    <!-- Modal de Confirmação (WhatsApp) -->
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
              <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
@@ -177,7 +169,6 @@
         </div>
     </div>
     
-    <!-- Modal de Confirmação da Plataforma -->
     <div id="platform-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-8 text-center max-w-sm mx-4">
              <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
@@ -189,7 +180,6 @@
         </div>
     </div>
 
-    <!-- Notificação Toast -->
     <div id="toast" class="fixed bottom-5 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg hidden opacity-0 transform translate-y-2">
         <p id="toast-message"></p>
     </div>
@@ -277,15 +267,18 @@
                 const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
                 const isOutOfStock = hasStock && product.estoque <= 0;
 
+                // ** NOVO LAYOUT DO PRODUTO **
                 productList.innerHTML += `
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
-                        <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-full h-48 object-cover">
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-gray-800">${product.nome}</h3>
-                            <p class="text-gray-600 mt-2 flex-grow">${product.descricao || 'Sem descrição.'}</p>
-                            <div class="flex justify-between items-center mt-4">
-                                <span class="text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span>
-                                <button class="bg-pink-100 text-pink-700 font-bold py-2 px-4 rounded-lg hover:bg-pink-200 transition-colors ${isOutOfStock ? 'cursor-not-allowed bg-gray-200 text-gray-500' : ''}" 
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex sm:flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
+                        <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-28 h-28 sm:w-full sm:h-48 object-cover flex-shrink-0">
+                        <div class="p-4 flex flex-col flex-grow justify-between sm:p-5">
+                            <div class="flex-grow">
+                                <h3 class="text-md sm:text-lg font-bold text-gray-800 leading-tight">${product.nome}</h3>
+                                <p class="text-gray-600 text-sm mt-1">${product.descricao || 'Sem descrição.'}</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-md sm:text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span>
+                                <button class="bg-pink-600 text-white font-bold py-1 px-3 text-sm rounded-md hover:bg-pink-700 transition-colors ${isOutOfStock ? 'cursor-not-allowed bg-gray-300 text-gray-500' : ''}" 
                                         onclick="addToCart('${product.id}')" ${isOutOfStock ? 'disabled' : ''}>
                                     ${isOutOfStock ? 'Esgotado' : 'Adicionar'}
                                 </button>
@@ -388,10 +381,11 @@
             }
         }
 
-        async function finalizeOrderForGuest(clientInfo) {
+        async function finalizeOrderForGuest(clientInfo, newClientId) {
             const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
             const orderData = { 
                 ...clientInfo, 
+                clienteId: newClientId,
                 itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), 
                 total: totalPrice, 
                 status: 'Pendente', 
@@ -463,16 +457,45 @@
             const address = guestAddressInput.value.trim();
             const phone = guestPhoneInput.value.trim();
             const paymentMethod = guestPaymentMethodSelect.value;
+            
             if (!name || !address || !phone || !paymentMethod) { 
-                alert('Preencha todos os campos: nome, telefone, endereço e forma de pagamento.'); 
+                showToast('Preencha todos os campos, por favor.');
                 return; 
             }
-            await finalizeOrderForGuest({ 
-                clienteNome: name, 
-                clienteEndereco: address, 
-                telefone: phone, 
-                formaPagamento: paymentMethod 
-            });
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/clientes`);
+                if (!response.ok) throw new Error('Não foi possível conectar ao servidor.');
+                const allClients = await response.json();
+                const formattedPhone = phone.replace(/\D/g, '');
+                let client = allClients.find(c => c.telefone && c.telefone.replace(/\D/g, '') === formattedPhone);
+                let clientId;
+
+                if (client) {
+                    clientId = client.id;
+                } else {
+                    const newClientData = { nome: name, endereco: address, telefone: phone, status: 'Ativo' };
+                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newClientData)
+                    });
+                    if (!createResponse.ok) throw new Error('Não foi possível criar o novo cliente.');
+                    const createdClient = await createResponse.json();
+                    clientId = createdClient.id;
+                }
+
+                await finalizeOrderForGuest({ 
+                    clienteNome: name, 
+                    clienteEndereco: address, 
+                    telefone: phone, 
+                    formaPagamento: paymentMethod 
+                }, clientId);
+                
+            } catch (error) {
+                console.error('Erro ao finalizar pedido como visitante:', error);
+                showToast('Ocorreu um erro ao processar o pedido.');
+            }
         });
 
         closeConfirmationButton.addEventListener('click', () => confirmationModal.classList.add('hidden'));
