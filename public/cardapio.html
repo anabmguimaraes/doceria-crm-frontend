@@ -11,6 +11,10 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 140px; 
+        }
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #db2777;
@@ -26,11 +30,22 @@
         #toast {
             transition: opacity 0.5s, transform 0.5s;
         }
+        #subcategory-nav a.active {
+            color: #db2777;
+            border-bottom-color: #db2777;
+        }
+        #subcategory-nav::-webkit-scrollbar {
+            display: none;
+        }
+        #subcategory-nav {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-pink-50">
 
-    <!-- Cabeçalho -->
+    <!-- Cabeçalho Principal (Fixo) -->
     <header class="bg-white shadow-md sticky top-0 z-20">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -43,14 +58,23 @@
             </button>
         </div>
     </header>
+    
+    <!-- Barra de Navegação de Subcategorias (Fixa) -->
+    <nav id="subcategory-nav-container" class="bg-white sticky top-[72px] z-10 shadow-sm">
+        <div id="subcategory-nav" class="container mx-auto px-6 flex items-center space-x-6 overflow-x-auto whitespace-nowrap">
+            <!-- Links de subcategorias serão injetados aqui -->
+        </div>
+    </nav>
+
 
     <!-- Conteúdo Principal -->
     <main class="container mx-auto px-6 py-8">
-        <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        <div id="product-list" class="space-y-12">
             <div id="loading-message" class="col-span-full flex flex-col items-center justify-center py-16">
                 <div class="loader"></div>
                 <p class="text-pink-600 mt-4">Carregando nosso cardápio...</p>
             </div>
+            <!-- Seções de produtos por subcategoria serão injetadas aqui -->
         </div>
     </main>
 
@@ -61,18 +85,38 @@
                 <h2 class="text-2xl font-bold text-pink-600">Seu Pedido</h2>
                 <button id="close-cart" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
             </div>
-            <div id="cart-items" class="p-6 max-h-96 overflow-y-auto"></div>
-            <div class="p-6 border-t">
-                <div class="flex justify-between items-center font-bold text-xl">
-                    <span>Total:</span>
-                    <span id="cart-total">R$ 0,00</span>
+            <div id="cart-items" class="p-6 max-h-80 overflow-y-auto"></div>
+            <div class="p-6 border-t space-y-4">
+                <!-- Seção do Cupom -->
+                <div class="space-y-2">
+                     <div class="flex gap-2">
+                        <input id="cupom-input" type="text" placeholder="Digite seu cupom" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 uppercase">
+                        <button id="verify-cupom-button" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-gray-700 transition-colors flex-shrink-0">Verificar</button>
+                    </div>
+                    <p id="cupom-message" class="text-sm"></p>
                 </div>
-                <button id="checkout-button" class="w-full bg-pink-600 text-white py-3 rounded-lg mt-4 font-bold hover:bg-pink-700 transition-colors">
+                 <!-- Resumo dos valores -->
+                <div id="cart-summary" class="space-y-1 text-gray-700">
+                    <div class="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span id="cart-subtotal">R$ 0,00</span>
+                    </div>
+                     <div id="discount-line" class="flex justify-between text-green-600 hidden">
+                        <span>Desconto:</span>
+                        <span id="cart-discount"></span>
+                    </div>
+                    <div class="flex justify-between items-center font-bold text-xl">
+                        <span>Total:</span>
+                        <span id="cart-total">R$ 0,00</span>
+                    </div>
+                </div>
+                <button id="checkout-button" class="w-full bg-pink-600 text-white py-3 rounded-lg mt-2 font-bold hover:bg-pink-700 transition-colors">
                     Finalizar Pedido
                 </button>
             </div>
         </div>
     </div>
+
 
     <!-- Modal de Identificação -->
     <div id="identification-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
@@ -142,6 +186,58 @@
         </div>
     </div>
     
+    <!-- Modal de Forma de Pagamento -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <button id="back-to-address" class="text-gray-500 hover:text-gray-800">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <h2 class="text-xl font-bold text-pink-600 text-center flex-grow">Forma de Pagamento</h2>
+                <button id="close-payment-modal" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <div id="delivery-address-summary" class="mb-4 p-3 bg-gray-50 rounded-lg text-sm">
+                    <p class="text-gray-500">Entregar em:</p>
+                    <p id="selected-address-text" class="font-semibold text-gray-800"></p>
+                </div>
+
+                <!-- Resumo do Pedido -->
+                <div id="payment-summary" class="mb-4 p-4 border rounded-lg space-y-2">
+                    <h3 class="font-bold text-gray-700">Resumo do Pedido</h3>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Subtotal:</span>
+                        <span id="payment-subtotal" class="font-medium text-gray-800">R$ 0,00</span>
+                    </div>
+                    <div id="payment-discount-row" class="flex justify-between text-sm text-green-600 hidden">
+                        <span class="text-green-600">Desconto (Cupom):</span>
+                        <span id="payment-discount" class="font-medium">- R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold border-t pt-2 mt-2">
+                        <span>Total a pagar:</span>
+                        <span id="payment-total" class="text-pink-600">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <p class="text-gray-600 mb-4">Selecione como você prefere pagar.</p>
+                <select id="payment-method-select" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white">
+                    <option value="" disabled selected>Escolha uma opção...</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Link de Pagamento">Link de Pagamento</option>
+                </select>
+                <p id="payment-error" class="text-red-500 text-sm mt-2 hidden"></p>
+            </div>
+            <div class="p-6 border-t">
+                <button id="confirm-order-button" class="w-full bg-pink-600 text-white py-3 rounded-lg font-bold hover:bg-pink-700 transition-colors">
+                    Confirmar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Editar Perfil -->
     <div id="customer-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
@@ -177,6 +273,24 @@
             </div>
             <div class="p-6">
                 <p class="text-gray-600 mb-4">Por favor, informe seus dados para entrega e pagamento.</p>
+
+                <!-- Resumo do Pedido para Visitante -->
+                 <div id="guest-summary" class="mb-4 p-4 border rounded-lg space-y-2">
+                    <h3 class="font-bold text-gray-700">Resumo do Pedido</h3>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Subtotal:</span>
+                        <span id="guest-subtotal" class="font-medium text-gray-800">R$ 0,00</span>
+                    </div>
+                    <div id="guest-discount-row" class="flex justify-between text-sm text-green-600 hidden">
+                        <span class="text-green-600">Desconto (Cupom):</span>
+                        <span id="guest-discount" class="font-medium">- R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold border-t pt-2 mt-2">
+                        <span>Total a pagar:</span>
+                        <span id="guest-total" class="text-pink-600">R$ 0,00</span>
+                    </div>
+                </div>
+
                 <div class="space-y-4">
                     <input id="guest-name" type="text" placeholder="Seu nome completo" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
                     <input id="guest-phone" type="tel" placeholder="Seu telefone (WhatsApp)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
@@ -230,21 +344,35 @@
 
 
     <script>
+        // --- CONSTANTES E VARIÁVEIS GLOBAIS ---
         const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
         const WHATSAPP_NUMBER = '5562991056075';
         let allProducts = [];
         let cart = [];
         let currentClient = null;
+        let pendingOrderDetails = {};
+        let appliedCupom = null; // Guarda o cupom aplicado
+        const subcategoryOrder = [
+            'Queridinhos', 'Bolo no pote', 'Copo da felicidade', 'Bombom aberto',
+            'Pipoca', 'Cone recheado', 'Bolo gelado', 'Bombom recheado'
+        ];
 
-        // --- Seleção de todos os elementos ---
+        // --- SELEÇÃO DE ELEMENTOS DO DOM ---
         const productList = document.getElementById('product-list');
+        const subcategoryNav = document.getElementById('subcategory-nav');
         const loadingMessage = document.getElementById('loading-message');
         const cartButton = document.getElementById('cart-button');
         const cartModal = document.getElementById('cart-modal');
         const closeCartButton = document.getElementById('close-cart');
         const cartItemsContainer = document.getElementById('cart-items');
         const cartCount = document.getElementById('cart-count');
+        const cartSubtotal = document.getElementById('cart-subtotal');
+        const cartDiscountLine = document.getElementById('discount-line');
+        const cartDiscount = document.getElementById('cart-discount');
         const cartTotal = document.getElementById('cart-total');
+        const cupomInput = document.getElementById('cupom-input');
+        const verifyCupomButton = document.getElementById('verify-cupom-button');
+        const cupomMessage = document.getElementById('cupom-message');
         const checkoutButton = document.getElementById('checkout-button');
         const identificationModal = document.getElementById('identification-modal');
         const usePhoneButton = document.getElementById('use-phone-button');
@@ -262,7 +390,6 @@
         const phoneInput = document.getElementById('phone-input');
         const phoneError = document.getElementById('phone-error');
         const searchPhoneButton = document.getElementById('search-phone-button');
-        
         const addressManagementModal = document.getElementById('address-management-modal');
         const addressModalTitle = document.getElementById('address-modal-title');
         const confirmCustomerName = document.getElementById('confirm-customer-name');
@@ -273,25 +400,35 @@
         const saveNewAddressButton = document.getElementById('save-new-address-button');
         const editProfileButton = document.getElementById('edit-profile-button');
         const closeAddressManagementModal = document.getElementById('close-address-management-modal');
-
+        const paymentModal = document.getElementById('payment-modal');
+        const closePaymentModal = document.getElementById('close-payment-modal');
+        const backToAddressButton = document.getElementById('back-to-address');
+        const selectedAddressText = document.getElementById('selected-address-text');
+        const paymentMethodSelect = document.getElementById('payment-method-select');
+        const confirmOrderButton = document.getElementById('confirm-order-button');
+        const paymentError = document.getElementById('payment-error');
         const customerProfileModal = document.getElementById('customer-profile-modal');
         const profileNameInput = document.getElementById('profile-name');
         const profileDobInput = document.getElementById('profile-dob');
         const saveProfileButton = document.getElementById('save-profile-button');
         const closeCustomerProfileModal = document.getElementById('close-customer-profile-modal');
-
         const confirmationModal = document.getElementById('confirmation-modal');
         const closeConfirmationButton = document.getElementById('close-confirmation');
         const platformConfirmationModal = document.getElementById('platform-confirmation-modal');
         const closePlatformConfirmationButton = document.getElementById('close-platform-confirmation');
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
-
-        // --- Funções da Aplicação ---
         
-        function showToast(message) {
+        // --- FUNÇÕES DA APLICAÇÃO ---
+        
+        function showToast(message, isError = false) {
             toastMessage.textContent = message;
-            toast.classList.remove('hidden', 'opacity-0', 'translate-y-2');
+            toast.className = `fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 10); // Pequeno delay para a transição funcionar
+            
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.classList.add('hidden'), 500);
@@ -303,8 +440,7 @@
                 const response = await fetch(`${API_BASE_URL}/produtos`);
                 if (!response.ok) throw new Error('Não foi possível carregar os produtos.');
                 allProducts = await response.json();
-                const deliveryProducts = allProducts.filter(p => p.categoria === 'Delivery');
-                renderProducts(deliveryProducts);
+                renderMenu();
             } catch (error) {
                 console.error("Erro ao buscar produtos:", error);
                 productList.innerHTML = `<p class="col-span-full text-center text-red-500">Erro ao carregar o cardápio.</p>`;
@@ -313,41 +449,99 @@
             }
         }
 
-        function renderProducts(productsToRender) {
-            productList.innerHTML = '';
-            if (productsToRender.length === 0) {
-                 productList.innerHTML = `<p class="col-span-full text-center text-gray-500">Nenhum produto para delivery no momento.</p>`;
-                 return;
-            }
-            productsToRender.forEach(product => {
-                const placeholderImage = 'https://placehold.co/600x400/FFC0CB/FFFFFF?text=Doce';
-                const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
-                const isOutOfStock = hasStock && product.estoque <= 0;
+        function renderMenu() {
+            const deliveryProducts = allProducts.filter(p => p.categoria === 'Delivery');
+            
+            const productsBySubcategory = deliveryProducts.reduce((acc, product) => {
+                const sub = product.subcategoria || 'Outros';
+                if (!acc[sub]) acc[sub] = [];
+                acc[sub].push(product);
+                return acc;
+            }, {});
 
-                productList.innerHTML += `
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex sm:flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
-                        <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-28 h-28 sm:w-full sm:h-48 object-cover flex-shrink-0">
-                        <div class="p-4 flex flex-col flex-grow justify-between sm:p-5">
-                            <div class="flex-grow">
-                                <h3 class="text-md sm:text-lg font-bold text-gray-800 leading-tight">${product.nome}</h3>
-                                <p class="text-gray-600 text-sm mt-1">${product.descricao || 'Sem descrição.'}</p>
-                            </div>
-                            <div class="flex justify-between items-center mt-2">
-                                <span class="text-md sm:text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span>
-                                <button class="bg-pink-600 text-white font-bold py-1 px-3 text-sm rounded-md hover:bg-pink-700 transition-colors ${isOutOfStock ? 'cursor-not-allowed bg-gray-300 text-gray-500' : ''}" 
-                                        onclick="addToCart('${product.id}')" ${isOutOfStock ? 'disabled' : ''}>
-                                    ${isOutOfStock ? 'Esgotado' : 'Adicionar'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
+            const availableSubcategories = subcategoryOrder.filter(sub => productsBySubcategory[sub] && productsBySubcategory[sub].length > 0);
+            
+            productList.innerHTML = '';
+            subcategoryNav.innerHTML = '';
+
+            availableSubcategories.forEach(sub => {
+                const slug = sub.toLowerCase().replace(/\s+/g, '-');
+                const link = document.createElement('a');
+                link.href = `#${slug}`;
+                link.textContent = sub;
+                link.className = 'py-4 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-pink-600 transition-colors';
+                subcategoryNav.appendChild(link);
             });
+
+            availableSubcategories.forEach(sub => {
+                const slug = sub.toLowerCase().replace(/\s+/g, '-');
+                const section = document.createElement('section');
+                section.id = slug;
+                const title = document.createElement('h2');
+                title.textContent = sub;
+                title.className = 'text-2xl font-bold text-gray-800 mb-6';
+                section.appendChild(title);
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6';
+                productsBySubcategory[sub].forEach(product => {
+                    grid.innerHTML += createProductCard(product);
+                });
+                section.appendChild(grid);
+                productList.appendChild(section);
+            });
+            
+            setupScrollSpy();
         }
+
+        function createProductCard(product) {
+            const placeholderImage = 'https://placehold.co/600x400/FFC0CB/FFFFFF?text=Doce';
+            const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
+            const isOutOfStock = hasStock && product.estoque <= 0;
+
+            return `
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden flex sm:flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
+                    <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-28 h-28 sm:w-full sm:h-48 object-cover flex-shrink-0">
+                    <div class="p-4 flex flex-col flex-grow justify-between sm:p-5">
+                        <div class="flex-grow">
+                            <h3 class="text-md sm:text-lg font-bold text-gray-800 leading-tight">${product.nome}</h3>
+                            <p class="text-gray-600 text-sm mt-1">${product.descricao || 'Sem descrição.'}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-md sm:text-lg font-bold text-pink-600">R$ ${product.preco.toFixed(2)}</span>
+                            <button class="bg-pink-600 text-white font-bold py-1 px-3 text-sm rounded-md hover:bg-pink-700 transition-colors ${isOutOfStock ? 'cursor-not-allowed bg-gray-300 text-gray-500' : ''}" 
+                                    onclick="addToCart('${product.id}')" ${isOutOfStock ? 'disabled' : ''}>
+                                ${isOutOfStock ? 'Esgotado' : 'Adicionar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function setupScrollSpy() {
+            const sections = document.querySelectorAll('#product-list section');
+            const navLinks = document.querySelectorAll('#subcategory-nav a');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, {
+                rootMargin: '-150px 0px -50% 0px'
+            });
+
+            sections.forEach(section => observer.observe(section));
+        }
+
 
         function renderCart() {
             cartItemsContainer.innerHTML = '';
             if (cart.length === 0) {
                 cartItemsContainer.innerHTML = '<p class="text-gray-500">Seu carrinho está vazio.</p>';
+                removeCupom(false); // Limpa o cupom se o carrinho estiver vazio
             } else {
                 cart.forEach(item => {
                     const cartItem = document.createElement('div');
@@ -385,10 +579,10 @@
                 }
                 renderCart();
             } else {
-                showToast('Quantidade máxima em estoque atingida!');
+                showToast('Quantidade máxima em estoque atingida!', true);
             }
         }
-
+        
         function removeFromCart(productId) {
             cart = cart.filter(item => item.id !== productId);
             renderCart();
@@ -404,7 +598,7 @@
                 
                 const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
                 if (hasStock && item.quantity >= product.estoque) {
-                    showToast('Quantidade máxima em estoque atingida!');
+                    showToast('Quantidade máxima em estoque atingida!', true);
                     return; 
                 }
             }
@@ -416,15 +610,98 @@
                 renderCart();
             }
         }
-
+        
         function updateCartInfo() {
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            
+            let finalPrice = subtotal;
+            if (appliedCupom && appliedCupom.valido) {
+                 if (subtotal >= appliedCupom.cupom.valorMinimo) {
+                    finalPrice -= appliedCupom.cupom.valorDesconto;
+                    cartDiscount.textContent = `- R$ ${appliedCupom.cupom.valorDesconto.toFixed(2)}`;
+                    cartDiscountLine.classList.remove('hidden');
+                } else {
+                    removeCupom(true); // Remove o cupom e mostra a mensagem de valor mínimo
+                    // O preço final permanece o subtotal
+                }
+            } else {
+                cartDiscountLine.classList.add('hidden');
+            }
+
             cartCount.textContent = totalItems;
-            cartTotal.textContent = `R$ ${totalPrice.toFixed(2)}`;
+            cartSubtotal.textContent = `R$ ${subtotal.toFixed(2)}`;
+            cartTotal.textContent = `R$ ${finalPrice.toFixed(2)}`;
         }
 
-        async function saveOrderToCRM(orderData) {
+        function updatePaymentSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            let discount = 0;
+            let total = subtotal;
+
+            const paymentSubtotalEl = document.getElementById('payment-subtotal');
+            const paymentDiscountRowEl = document.getElementById('payment-discount-row');
+            const paymentDiscountEl = document.getElementById('payment-discount');
+            const paymentTotalEl = document.getElementById('payment-total');
+
+            if (appliedCupom && appliedCupom.valido) {
+                discount = appliedCupom.cupom.valorDesconto;
+                total = subtotal - discount;
+                paymentDiscountEl.textContent = `- R$ ${discount.toFixed(2)}`;
+                paymentDiscountRowEl.classList.remove('hidden');
+            } else {
+                paymentDiscountRowEl.classList.add('hidden');
+            }
+
+            paymentSubtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
+            paymentTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+        }
+
+        function updateGuestSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            let discount = 0;
+            let total = subtotal;
+
+            const guestSubtotalEl = document.getElementById('guest-subtotal');
+            const guestDiscountRowEl = document.getElementById('guest-discount-row');
+            const guestDiscountEl = document.getElementById('guest-discount');
+            const guestTotalEl = document.getElementById('guest-total');
+
+            if (appliedCupom && appliedCupom.valido) {
+                discount = appliedCupom.cupom.valorDesconto;
+                total = subtotal - discount;
+                guestDiscountEl.textContent = `- R$ ${discount.toFixed(2)}`;
+                guestDiscountRowEl.classList.remove('hidden');
+            } else {
+                guestDiscountRowEl.classList.add('hidden');
+            }
+
+            guestSubtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
+            guestTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+        }
+
+        async function finalizeOrder(clientInfo, clientId, isPlatform) {
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            let total = subtotal;
+            let cupomData = null;
+            
+            if(appliedCupom && appliedCupom.valido && subtotal >= appliedCupom.cupom.valorMinimo){
+                total -= appliedCupom.cupom.valorDesconto;
+                cupomData = appliedCupom.cupom;
+            }
+
+            const orderData = { 
+                ...clientInfo, 
+                clienteId: clientId,
+                itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), 
+                subtotal: subtotal,
+                desconto: cupomData ? cupomData.valorDesconto : 0,
+                total: total, 
+                cupom: cupomData,
+                status: 'Pendente', 
+                origem: isPlatform ? 'Plataforma' : 'Cardapio Online'
+            };
+            
             try {
                 const response = await fetch(`${API_BASE_URL}/pedidos`, {
                     method: 'POST',
@@ -432,46 +709,39 @@
                     body: JSON.stringify(orderData),
                 });
                 if (!response.ok) throw new Error('Falha ao salvar o pedido no sistema.');
-            } catch (error) {
-                console.error('Erro ao salvar pedido no CRM:', error);
+            } catch(e) {
+                console.error("Erro ao salvar o pedido", e);
+                showToast("Não foi possível registrar o seu pedido. Tente novamente.", true);
+                return; // Impede o fluxo de continuar se o pedido falhar
             }
-        }
+            
+            if(!isPlatform) {
+                let message = `Olá! Gostaria de fazer o seguinte pedido:\n\n`;
+                cart.forEach(item => { message += `*${item.quantity}x* ${item.nome} - R$ ${(item.preco * item.quantity).toFixed(2)}\n`; });
+                
+                message += `\n*Subtotal:* R$ ${subtotal.toFixed(2)}`;
+                if(cupomData) {
+                    message += `\n*Desconto (${cupomData.codigo}):* - R$ ${cupomData.valorDesconto.toFixed(2)}`;
+                }
+                message += `\n*Total:* R$ ${total.toFixed(2)}`;
+                
+                message += `\n\n*Cliente:* ${clientInfo.clienteNome}`;
+                message += `\n*Telefone:* ${clientInfo.telefone}`;
+                message += `\n*Endereço:* ${clientInfo.clienteEndereco}`;
+                message += `\n*Pagamento:* ${clientInfo.formaPagamento}`;
+                const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+                confirmationModal.classList.remove('hidden');
+            } else {
+                 platformConfirmationModal.classList.remove('hidden');
+            }
 
-        async function finalizeOrderForGuest(clientInfo, newClientId) {
-            const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-            const orderData = { 
-                ...clientInfo, 
-                clienteId: newClientId,
-                itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), 
-                total: totalPrice, 
-                status: 'Pendente', 
-                origem: 'Cardapio Online' 
-            };
-            await saveOrderToCRM(orderData);
-            let message = `Olá! Gostaria de fazer o seguinte pedido:\n\n`;
-            cart.forEach(item => { message += `*${item.quantity}x* ${item.nome} - R$ ${(item.preco * item.quantity).toFixed(2)}\n`; });
-            message += `\n*Total:* R$ ${totalPrice.toFixed(2)}`;
-            message += `\n\n*Cliente:* ${clientInfo.clienteNome}`;
-            message += `\n*Telefone:* ${clientInfo.telefone}`;
-            message += `\n*Endereço:* ${clientInfo.clienteEndereco}`;
-            message += `\n*Pagamento:* ${clientInfo.formaPagamento}`;
-            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-            [cartModal, guestInfoModal].forEach(modal => modal.classList.add('hidden'));
-            confirmationModal.classList.remove('hidden');
+            // Reset geral
+            [cartModal, guestInfoModal, addressManagementModal, paymentModal].forEach(modal => modal.classList.add('hidden'));
             cart = []; 
             currentClient = null;
-            renderCart();
-        }
-
-        async function finalizeOrderOnPlatform(clientInfo) {
-            const totalPrice = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-            const orderData = { ...clientInfo, itens: cart.map(item => ({ id: item.id, nome: item.nome, quantity: item.quantity, preco: item.preco })), total: totalPrice, status: 'Pendente', origem: 'Plataforma' };
-            await saveOrderToCRM(orderData);
-            addressManagementModal.classList.add('hidden');
-            platformConfirmationModal.classList.remove('hidden');
-            cart = []; 
-            currentClient = null;
+            pendingOrderDetails = {};
+            removeCupom(false); // reseta o cupom sem mensagem
             renderCart();
         }
 
@@ -497,7 +767,13 @@
                     useButton.className = 'w-full mt-2 bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600';
                     useButton.textContent = 'Sim, usar este endereço';
                     useButton.onclick = () => {
-                        finalizeOrderOnPlatform({ clienteId: client.id, clienteNome: client.nome, clienteEndereco: address });
+                        pendingOrderDetails = { clienteId: client.id, clienteNome: client.nome, clienteEndereco: address };
+                        selectedAddressText.textContent = address;
+                        updatePaymentSummary(); // <-- ATUALIZA O RESUMO
+                        addressManagementModal.classList.add('hidden');
+                        paymentModal.classList.remove('hidden');
+                        paymentMethodSelect.value = '';
+                        paymentError.classList.add('hidden');
                     };
                     addressDiv.appendChild(useButton);
                     addressList.appendChild(addressDiv);
@@ -511,14 +787,110 @@
             addressManagementModal.classList.remove('hidden');
         }
 
+        function removeCupom(showMinAmountMessage = false) {
+            if (showMinAmountMessage) {
+                showToast('O valor do carrinho é inferior ao mínimo exigido pelo cupom.', true);
+                cupomMessage.textContent = `Valor mínimo de R$ ${appliedCupom.cupom.valorMinimo.toFixed(2)} não atingido.`;
+                cupomMessage.className = 'text-sm text-red-500';
+            } else if (appliedCupom) { 
+                 showToast('Cupom removido.');
+                 cupomMessage.textContent = '';
+            }
+
+            appliedCupom = null;
+            cupomInput.value = '';
+            cupomInput.disabled = false;
+            verifyCupomButton.textContent = 'Verificar';
+            verifyCupomButton.classList.replace('bg-red-600', 'bg-gray-600');
+            verifyCupomButton.classList.replace('hover:bg-red-700', 'hover:bg-gray-700');
+            if(!showMinAmountMessage) {
+              cupomMessage.textContent = '';
+            }
+            updateCartInfo();
+        }
+
         // --- Event Listeners ---
         cartButton.addEventListener('click', () => cartModal.classList.remove('hidden'));
         closeCartButton.addEventListener('click', () => cartModal.classList.add('hidden'));
+
+        verifyCupomButton.addEventListener('click', async () => {
+            if (appliedCupom) {
+                removeCupom();
+                return;
+            }
+            
+            const codigo = cupomInput.value.trim().toUpperCase();
+            if (!codigo) {
+                showToast('Digite um código de cupom.', true);
+                return;
+            }
+
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+
+            // MELHORIA: Adiciona verificação para não enviar requisição com carrinho vazio
+            if (subtotal <= 0) {
+                showToast('Adicione itens ao carrinho antes de aplicar um cupom.', true);
+                return;
+            }
+
+            try {
+                verifyCupomButton.disabled = true;
+                verifyCupomButton.innerHTML = '<div class="loader !w-5 !h-5 !border-2 !border-t-white mx-auto"></div>';
+
+                const response = await fetch(`${API_BASE_URL}/cupons/verificar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo, totalCarrinho: subtotal })
+                });
+
+                // Verifica se a resposta não foi OK (ex: 400, 404, 500)
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.mensagem || `Erro ${response.status}`);
+                }
+                
+                const result = await response.json();
+                appliedCupom = result;
+
+                if (result.valido) {
+                    cupomMessage.textContent = `Cupom "${result.cupom.codigo}" aplicado!`;
+                    cupomMessage.className = 'text-sm text-green-600';
+                    cupomInput.disabled = true;
+                    verifyCupomButton.textContent = 'Remover';
+                    verifyCupomButton.classList.replace('bg-gray-600', 'bg-red-600');
+                    verifyCupomButton.classList.replace('hover:bg-gray-700', 'hover:bg-red-700');
+                    showToast('Cupom aplicado com sucesso!');
+                    updateCartInfo();
+                } else {
+                    // Mensagens de erro de validação do backend
+                    cupomMessage.textContent = result.mensagem || 'Cupom inválido.';
+                    cupomMessage.className = 'text-sm text-red-500';
+                    appliedCupom = null;
+                }
+            } catch (error) {
+                console.error("Erro ao verificar cupom:", error);
+                cupomMessage.textContent = error.message || 'Erro ao conectar com o servidor.';
+                cupomMessage.className = 'text-sm text-red-500';
+                appliedCupom = null;
+            } finally {
+                verifyCupomButton.disabled = false;
+                if(!appliedCupom) {
+                   verifyCupomButton.innerHTML = 'Verificar';
+                } else {
+                    verifyCupomButton.innerHTML = 'Remover';
+                }
+            }
+        });
+
         checkoutButton.addEventListener('click', () => { if (cart.length === 0) return; cartModal.classList.add('hidden'); identificationModal.classList.remove('hidden'); });
         closeIdentificationModal.addEventListener('click', () => identificationModal.classList.add('hidden'));
         usePhoneButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); phoneLoginModal.classList.remove('hidden'); phoneInput.value = ''; phoneError.classList.add('hidden'); });
         closePhoneLoginModal.addEventListener('click', () => { phoneLoginModal.classList.add('hidden'); currentClient = null; });
-        continueGuestButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); guestInfoModal.classList.remove('hidden'); });
+        continueGuestButton.addEventListener('click', () => { 
+            identificationModal.classList.add('hidden'); 
+            updateGuestSummary();
+            guestInfoModal.classList.remove('hidden'); 
+        });
         closeGuestInfoModal.addEventListener('click', () => guestInfoModal.classList.add('hidden'));
         
         searchPhoneButton.addEventListener('click', async () => {
@@ -548,24 +920,25 @@
         saveNewAddressButton.addEventListener('click', async () => {
             const newAddress = newAddressInput.value.trim();
             if (!newAddress) {
-                showToast("Por favor, digite um novo endereço.");
+                showToast("Por favor, digite um novo endereço.", true);
                 return;
             }
 
             try {
-                if (currentClient && currentClient.id) { // Cliente existente
+                let finalOrderInfo;
+                if (currentClient && currentClient.id) {
                     const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ newAddress: newAddress })
                     });
                     if (!response.ok) throw new Error("Não foi possível salvar o novo endereço.");
-                    finalizeOrderOnPlatform({ clienteId: currentClient.id, clienteNome: currentClient.nome, clienteEndereco: newAddress });
-                } else { // Novo cliente
+                    finalOrderInfo = { clienteId: currentClient.id, clienteNome: currentClient.nome, clienteEndereco: newAddress };
+                } else {
                      if (currentClient.nome === 'Novo Cliente') {
                         customerProfileModal.classList.remove('hidden');
-                        showToast('Por favor, preencha seu nome para o cadastro.');
-                        return; // Impede a finalização até que o nome seja preenchido
+                        showToast('Por favor, preencha seu nome para o cadastro.', true);
+                        return;
                     }
                     const newClientData = { nome: currentClient.nome, aniversario: currentClient.aniversario || '', telefone: currentClient.telefone, enderecos: [newAddress], status: 'Ativo' };
                     const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
@@ -576,11 +949,20 @@
                     if (!createResponse.ok) throw new Error("Não foi possível criar o cadastro.");
                     const createdClient = await createResponse.json();
                     
-                    finalizeOrderOnPlatform({ clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: newAddress });
+                    finalOrderInfo = { clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: newAddress };
                 }
+
+                pendingOrderDetails = finalOrderInfo;
+                selectedAddressText.textContent = finalOrderInfo.clienteEndereco;
+                updatePaymentSummary();
+                addressManagementModal.classList.add('hidden');
+                paymentModal.classList.remove('hidden');
+                paymentMethodSelect.value = '';
+                paymentError.classList.add('hidden');
+
             } catch(error) {
                 console.error("Erro ao salvar endereço:", error);
-                showToast("Ocorreu um erro ao salvar o endereço.");
+                showToast("Ocorreu um erro ao salvar o endereço.", true);
             }
         });
 
@@ -598,18 +980,18 @@
             const newDob = profileDobInput.value.trim();
 
             if (!newName) {
-                showToast("O nome é obrigatório.");
+                showToast("O nome é obrigatório.", true);
                 return;
             }
             
             const updatedData = { nome: newName, aniversario: newDob };
 
             try {
-                 if (!currentClient.id) { // Criar novo cliente
+                 if (!currentClient.id) {
                     currentClient.nome = newName;
                     currentClient.aniversario = newDob;
-                    showToast("Dados salvos! Agora adicione um endereço.");
-                 } else { // Atualizar cliente existente
+                    showToast("Dados salvos! Agora adicione um endereço.", false);
+                 } else {
                     const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -617,19 +999,18 @@
                     });
                     if (!response.ok) throw new Error("Não foi possível atualizar o perfil.");
                      currentClient = await response.json();
-                     showToast("Perfil atualizado com sucesso!");
+                     showToast("Perfil atualizado com sucesso!", false);
                  }
 
                 customerProfileModal.classList.add('hidden');
-                addressManagementModal.classList.add('hidden'); // Fecha o modal de endereço antigo
-                openAddressManagementModal(currentClient); // Reabre com os dados atualizados
+                addressManagementModal.classList.add('hidden');
+                openAddressManagementModal(currentClient);
 
             } catch(error) {
                 console.error("Erro ao salvar perfil:", error);
-                showToast("Ocorreu um erro ao salvar o perfil.");
+                showToast("Ocorreu um erro ao salvar o perfil.", true);
             }
         });
-
 
         sendWhatsappButton.addEventListener('click', async () => {
             const name = guestNameInput.value.trim(); 
@@ -638,10 +1019,13 @@
             const paymentMethod = guestPaymentMethodSelect.value;
             
             if (!name || !address || !phone || !paymentMethod) { 
-                showToast('Preencha todos os campos, por favor.');
+                showToast('Preencha todos os campos, por favor.', true);
                 return; 
             }
             
+            sendWhatsappButton.disabled = true;
+            sendWhatsappButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
             try {
                 const response = await fetch(`${API_BASE_URL}/clientes`);
                 if (!response.ok) throw new Error('Não foi possível conectar ao servidor.');
@@ -664,16 +1048,54 @@
                     clientId = createdClient.id;
                 }
 
-                await finalizeOrderForGuest({ 
+                await finalizeOrder({ 
                     clienteNome: name, 
                     clienteEndereco: address, 
                     telefone: phone, 
                     formaPagamento: paymentMethod 
-                }, clientId);
+                }, clientId, false);
                 
             } catch (error) {
                 console.error('Erro ao finalizar pedido como visitante:', error);
-                showToast('Ocorreu um erro ao processar o pedido.');
+                showToast('Ocorreu um erro ao processar o pedido.', true);
+            } finally {
+                sendWhatsappButton.disabled = false;
+                sendWhatsappButton.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp';
+            }
+        });
+
+        closePaymentModal.addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        backToAddressButton.addEventListener('click', () => {
+            paymentModal.classList.add('hidden');
+            addressManagementModal.classList.remove('hidden');
+        });
+
+        confirmOrderButton.addEventListener('click', async () => {
+            const paymentMethod = paymentMethodSelect.value;
+            if (!paymentMethod) {
+                paymentError.textContent = 'Por favor, selecione uma forma de pagamento.';
+                paymentError.classList.remove('hidden');
+                return;
+            }
+            paymentError.classList.add('hidden');
+            
+            confirmOrderButton.disabled = true;
+            confirmOrderButton.textContent = 'Confirmando...';
+
+            try {
+                const finalOrderDetails = {
+                    ...pendingOrderDetails,
+                    formaPagamento: paymentMethod
+                };
+                
+                await finalizeOrder(finalOrderDetails, finalOrderDetails.clienteId, true);
+            } catch (error) {
+                 console.error('Erro ao confirmar o pedido:', error);
+                 showToast('Ocorreu um erro ao confirmar o pedido.', true);
+            } finally {
+                 confirmOrderButton.disabled = false;
+                 confirmOrderButton.textContent = 'Confirmar Pedido';
             }
         });
 
@@ -683,4 +1105,3 @@
     </script>
 </body>
 </html>
-
