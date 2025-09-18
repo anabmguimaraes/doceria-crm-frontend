@@ -87,14 +87,6 @@
             </div>
             <div id="cart-items" class="p-6 max-h-80 overflow-y-auto"></div>
             <div class="p-6 border-t space-y-4">
-                <!-- Seção do Cupom -->
-                <div class="space-y-2">
-                     <div class="flex gap-2">
-                        <input id="cupom-input" type="text" placeholder="Digite seu cupom" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 uppercase">
-                        <button id="verify-cupom-button" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-gray-700 transition-colors flex-shrink-0">Verificar</button>
-                    </div>
-                    <p id="cupom-message" class="text-sm"></p>
-                </div>
                  <!-- Resumo dos valores -->
                 <div id="cart-summary" class="space-y-1 text-gray-700">
                     <div class="flex justify-between">
@@ -201,6 +193,15 @@
                     <p class="text-gray-500">Entregar em:</p>
                     <p id="selected-address-text" class="font-semibold text-gray-800"></p>
                 </div>
+                
+                <!-- Seção do Cupom Adicionada Aqui -->
+                <div class="space-y-2 mb-4">
+                     <div class="flex gap-2">
+                        <input id="payment-cupom-input" type="text" placeholder="Tem um cupom?" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 uppercase">
+                        <button id="payment-verify-cupom-button" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-gray-700 transition-colors flex-shrink-0">Aplicar</button>
+                    </div>
+                    <p id="payment-cupom-message" class="text-sm"></p>
+                </div>
 
                 <!-- Resumo do Pedido -->
                 <div id="payment-summary" class="mb-4 p-4 border rounded-lg space-y-2">
@@ -273,7 +274,7 @@
             </div>
             <div class="p-6">
                 <p class="text-gray-600 mb-4">Por favor, informe seus dados para entrega e pagamento.</p>
-
+                
                 <!-- Resumo do Pedido para Visitante -->
                  <div id="guest-summary" class="mb-4 p-4 border rounded-lg space-y-2">
                     <h3 class="font-bold text-gray-700">Resumo do Pedido</h3>
@@ -289,6 +290,15 @@
                         <span>Total a pagar:</span>
                         <span id="guest-total" class="text-pink-600">R$ 0,00</span>
                     </div>
+                </div>
+
+                <!-- Seção do Cupom Adicionada Aqui -->
+                <div class="space-y-2 mb-4">
+                     <div class="flex gap-2">
+                        <input id="guest-cupom-input" type="text" placeholder="Tem um cupom?" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 uppercase">
+                        <button id="guest-verify-cupom-button" class="bg-gray-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-gray-700 transition-colors flex-shrink-0">Aplicar</button>
+                    </div>
+                    <p id="guest-cupom-message" class="text-sm"></p>
                 </div>
 
                 <div class="space-y-4">
@@ -351,7 +361,7 @@
         let cart = [];
         let currentClient = null;
         let pendingOrderDetails = {};
-        let appliedCupom = null; // Guarda o cupom aplicado
+        let appliedCupom = null;
         const subcategoryOrder = [
             'Queridinhos', 'Bolo no pote', 'Copo da felicidade', 'Bombom aberto',
             'Pipoca', 'Cone recheado', 'Bolo gelado', 'Bombom recheado'
@@ -370,9 +380,6 @@
         const cartDiscountLine = document.getElementById('discount-line');
         const cartDiscount = document.getElementById('cart-discount');
         const cartTotal = document.getElementById('cart-total');
-        const cupomInput = document.getElementById('cupom-input');
-        const verifyCupomButton = document.getElementById('verify-cupom-button');
-        const cupomMessage = document.getElementById('cupom-message');
         const checkoutButton = document.getElementById('checkout-button');
         const identificationModal = document.getElementById('identification-modal');
         const usePhoneButton = document.getElementById('use-phone-button');
@@ -418,6 +425,14 @@
         const closePlatformConfirmationButton = document.getElementById('close-platform-confirmation');
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
+
+        // Seletores dos novos campos de cupom
+        const guestCupomInput = document.getElementById('guest-cupom-input');
+        const guestVerifyCupomButton = document.getElementById('guest-verify-cupom-button');
+        const guestCupomMessage = document.getElementById('guest-cupom-message');
+        const paymentCupomInput = document.getElementById('payment-cupom-input');
+        const paymentVerifyCupomButton = document.getElementById('payment-verify-cupom-button');
+        const paymentCupomMessage = document.getElementById('payment-cupom-message');
         
         // --- FUNÇÕES DA APLICAÇÃO ---
         
@@ -425,14 +440,8 @@
             toastMessage.textContent = message;
             toast.className = `fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.remove('opacity-0', 'translate-y-2');
-            }, 10); // Pequeno delay para a transição funcionar
-            
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.classList.add('hidden'), 500);
-            }, 3000);
+            setTimeout(() => { toast.classList.remove('opacity-0', 'translate-y-2'); }, 10);
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.classList.add('hidden'), 500); }, 3000);
         }
 
         async function fetchProducts() {
@@ -451,19 +460,15 @@
 
         function renderMenu() {
             const deliveryProducts = allProducts.filter(p => p.categoria === 'Delivery');
-            
             const productsBySubcategory = deliveryProducts.reduce((acc, product) => {
                 const sub = product.subcategoria || 'Outros';
                 if (!acc[sub]) acc[sub] = [];
                 acc[sub].push(product);
                 return acc;
             }, {});
-
             const availableSubcategories = subcategoryOrder.filter(sub => productsBySubcategory[sub] && productsBySubcategory[sub].length > 0);
-            
             productList.innerHTML = '';
             subcategoryNav.innerHTML = '';
-
             availableSubcategories.forEach(sub => {
                 const slug = sub.toLowerCase().replace(/\s+/g, '-');
                 const link = document.createElement('a');
@@ -472,7 +477,6 @@
                 link.className = 'py-4 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-pink-600 transition-colors';
                 subcategoryNav.appendChild(link);
             });
-
             availableSubcategories.forEach(sub => {
                 const slug = sub.toLowerCase().replace(/\s+/g, '-');
                 const section = document.createElement('section');
@@ -489,7 +493,6 @@
                 section.appendChild(grid);
                 productList.appendChild(section);
             });
-            
             setupScrollSpy();
         }
 
@@ -497,7 +500,6 @@
             const placeholderImage = 'https://placehold.co/600x400/FFC0CB/FFFFFF?text=Doce';
             const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
             const isOutOfStock = hasStock && product.estoque <= 0;
-
             return `
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden flex sm:flex-col transform hover:scale-105 transition-transform duration-300 ${isOutOfStock ? 'opacity-50 grayscale' : ''}">
                     <img src="${product.imageUrl || placeholderImage}" alt="${product.nome}" class="w-28 h-28 sm:w-full sm:h-48 object-cover flex-shrink-0">
@@ -520,7 +522,6 @@
         function setupScrollSpy() {
             const sections = document.querySelectorAll('#product-list section');
             const navLinks = document.querySelectorAll('#subcategory-nav a');
-
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -529,19 +530,14 @@
                         });
                     }
                 });
-            }, {
-                rootMargin: '-150px 0px -50% 0px'
-            });
-
+            }, { rootMargin: '-150px 0px -50% 0px' });
             sections.forEach(section => observer.observe(section));
         }
-
 
         function renderCart() {
             cartItemsContainer.innerHTML = '';
             if (cart.length === 0) {
                 cartItemsContainer.innerHTML = '<p class="text-gray-500">Seu carrinho está vazio.</p>';
-                removeCupom(false); // Limpa o cupom se o carrinho estiver vazio
             } else {
                 cart.forEach(item => {
                     const cartItem = document.createElement('div');
@@ -566,11 +562,9 @@
         function addToCart(productId) {
             const product = allProducts.find(p => p.id === productId);
             if (!product) return;
-
             const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
             const existingItem = cart.find(item => item.id === productId);
             const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-
             if (!hasStock || currentQuantityInCart < product.estoque) {
                 if (existingItem) {
                     existingItem.quantity++;
@@ -591,18 +585,15 @@
         function updateQuantity(productId, change) {
             const item = cart.find(item => item.id === productId);
             if (!item) return;
-            
             if (change > 0) {
                 const product = allProducts.find(p => p.id === productId);
                 if (!product) return;
-                
                 const hasStock = product.estoque !== null && typeof product.estoque !== 'undefined';
                 if (hasStock && item.quantity >= product.estoque) {
                     showToast('Quantidade máxima em estoque atingida!', true);
                     return; 
                 }
             }
-            
             item.quantity += change;
             if (item.quantity <= 0) {
                 removeFromCart(productId);
@@ -614,81 +605,62 @@
         function updateCartInfo() {
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
             const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            const finalPrice = subtotal - (appliedCupom?.cupom?.valorDesconto || 0);
             
-            let finalPrice = subtotal;
-            if (appliedCupom && appliedCupom.valido) {
-                 if (subtotal >= appliedCupom.cupom.valorMinimo) {
-                    finalPrice -= appliedCupom.cupom.valorDesconto;
-                    cartDiscount.textContent = `- R$ ${appliedCupom.cupom.valorDesconto.toFixed(2)}`;
-                    cartDiscountLine.classList.remove('hidden');
-                } else {
-                    removeCupom(true); // Remove o cupom e mostra a mensagem de valor mínimo
-                    // O preço final permanece o subtotal
-                }
-            } else {
-                cartDiscountLine.classList.add('hidden');
-            }
-
             cartCount.textContent = totalItems;
             cartSubtotal.textContent = `R$ ${subtotal.toFixed(2)}`;
             cartTotal.textContent = `R$ ${finalPrice.toFixed(2)}`;
+            
+            if (appliedCupom) {
+                cartDiscount.textContent = `- R$ ${appliedCupom.cupom.valorDesconto.toFixed(2)}`;
+                cartDiscountLine.classList.remove('hidden');
+            } else {
+                cartDiscountLine.classList.add('hidden');
+            }
+            
+            updateGuestSummary();
+            updatePaymentSummary();
         }
 
         function updatePaymentSummary() {
             const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-            let discount = 0;
-            let total = subtotal;
+            let discount = appliedCupom?.cupom?.valorDesconto || 0;
+            let total = subtotal - discount;
 
-            const paymentSubtotalEl = document.getElementById('payment-subtotal');
-            const paymentDiscountRowEl = document.getElementById('payment-discount-row');
-            const paymentDiscountEl = document.getElementById('payment-discount');
-            const paymentTotalEl = document.getElementById('payment-total');
-
-            if (appliedCupom && appliedCupom.valido) {
-                discount = appliedCupom.cupom.valorDesconto;
-                total = subtotal - discount;
-                paymentDiscountEl.textContent = `- R$ ${discount.toFixed(2)}`;
-                paymentDiscountRowEl.classList.remove('hidden');
+            document.getElementById('payment-subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+            const discountRow = document.getElementById('payment-discount-row');
+            if (discount > 0) {
+                document.getElementById('payment-discount').textContent = `- R$ ${discount.toFixed(2)}`;
+                discountRow.classList.remove('hidden');
             } else {
-                paymentDiscountRowEl.classList.add('hidden');
+                discountRow.classList.add('hidden');
             }
-
-            paymentSubtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
-            paymentTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById('payment-total').textContent = `R$ ${total.toFixed(2)}`;
         }
 
         function updateGuestSummary() {
             const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-            let discount = 0;
-            let total = subtotal;
-
-            const guestSubtotalEl = document.getElementById('guest-subtotal');
-            const guestDiscountRowEl = document.getElementById('guest-discount-row');
-            const guestDiscountEl = document.getElementById('guest-discount');
-            const guestTotalEl = document.getElementById('guest-total');
-
-            if (appliedCupom && appliedCupom.valido) {
-                discount = appliedCupom.cupom.valorDesconto;
-                total = subtotal - discount;
-                guestDiscountEl.textContent = `- R$ ${discount.toFixed(2)}`;
-                guestDiscountRowEl.classList.remove('hidden');
+            let discount = appliedCupom?.cupom?.valorDesconto || 0;
+            let total = subtotal - discount;
+            
+            document.getElementById('guest-subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+            const discountRow = document.getElementById('guest-discount-row');
+             if (discount > 0) {
+                document.getElementById('guest-discount').textContent = `- R$ ${discount.toFixed(2)}`;
+                discountRow.classList.remove('hidden');
             } else {
-                guestDiscountRowEl.classList.add('hidden');
+                discountRow.classList.add('hidden');
             }
-
-            guestSubtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
-            guestTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById('guest-total').textContent = `R$ ${total.toFixed(2)}`;
         }
 
         async function finalizeOrder(clientInfo, clientId, isPlatform) {
             const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-            let total = subtotal;
             let cupomData = null;
-            
             if(appliedCupom && appliedCupom.valido && subtotal >= appliedCupom.cupom.valorMinimo){
-                total -= appliedCupom.cupom.valorDesconto;
                 cupomData = appliedCupom.cupom;
             }
+            const total = subtotal - (cupomData?.valorDesconto || 0);
 
             const orderData = { 
                 ...clientInfo, 
@@ -708,40 +680,33 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(orderData),
                 });
-                if (!response.ok) throw new Error('Falha ao salvar o pedido no sistema.');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Falha ao salvar o pedido no sistema.');
+                }
             } catch(e) {
                 console.error("Erro ao salvar o pedido", e);
-                showToast("Não foi possível registrar o seu pedido. Tente novamente.", true);
-                return; // Impede o fluxo de continuar se o pedido falhar
+                showToast(e.message, true);
+                return;
             }
             
             if(!isPlatform) {
                 let message = `Olá! Gostaria de fazer o seguinte pedido:\n\n`;
                 cart.forEach(item => { message += `*${item.quantity}x* ${item.nome} - R$ ${(item.preco * item.quantity).toFixed(2)}\n`; });
-                
-                message += `\n*Subtotal:* R$ ${subtotal.toFixed(2)}`;
-                if(cupomData) {
-                    message += `\n*Desconto (${cupomData.codigo}):* - R$ ${cupomData.valorDesconto.toFixed(2)}`;
-                }
+                if(cupomData) { message += `\n*Desconto (${cupomData.codigo}):* - R$ ${cupomData.valorDesconto.toFixed(2)}`; }
                 message += `\n*Total:* R$ ${total.toFixed(2)}`;
-                
-                message += `\n\n*Cliente:* ${clientInfo.clienteNome}`;
-                message += `\n*Telefone:* ${clientInfo.telefone}`;
-                message += `\n*Endereço:* ${clientInfo.clienteEndereco}`;
-                message += `\n*Pagamento:* ${clientInfo.formaPagamento}`;
-                const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
+                message += `\n\n*Cliente:* ${clientInfo.clienteNome}\n*Telefone:* ${clientInfo.telefone}\n*Endereço:* ${clientInfo.clienteEndereco}\n*Pagamento:* ${clientInfo.formaPagamento}`;
+                window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
                 confirmationModal.classList.remove('hidden');
             } else {
                  platformConfirmationModal.classList.remove('hidden');
             }
 
-            // Reset geral
             [cartModal, guestInfoModal, addressManagementModal, paymentModal].forEach(modal => modal.classList.add('hidden'));
             cart = []; 
             currentClient = null;
             pendingOrderDetails = {};
-            removeCupom(false); // reseta o cupom sem mensagem
+            removeCupom(false);
             renderCart();
         }
 
@@ -749,33 +714,21 @@
             currentClient = client;
             addressList.innerHTML = '';
             addNewAddressContainer.classList.add('hidden');
-            
             confirmCustomerName.textContent = client.nome;
-            
             if (client.enderecos && client.enderecos.length > 0) {
                 addressModalTitle.textContent = `Confirmar Endereço`;
                 client.enderecos.forEach(address => {
                     const addressDiv = document.createElement('div');
                     addressDiv.className = 'bg-gray-100 p-4 rounded-lg';
-                    
-                    const addressP = document.createElement('p');
-                    addressP.className = 'font-semibold';
-                    addressP.textContent = address;
-                    addressDiv.appendChild(addressP);
-
-                    const useButton = document.createElement('button');
-                    useButton.className = 'w-full mt-2 bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600';
-                    useButton.textContent = 'Sim, usar este endereço';
-                    useButton.onclick = () => {
-                        pendingOrderDetails = { clienteId: client.id, clienteNome: client.nome, clienteEndereco: address };
+                    addressDiv.innerHTML = `<p class="font-semibold">${address}</p>
+                        <button class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600">Sim, usar este endereço</button>`;
+                    addressDiv.querySelector('button').onclick = () => {
+                        pendingOrderDetails = { clienteId: client.id, clienteNome: client.nome, clienteEndereco: address, telefone: client.telefone };
                         selectedAddressText.textContent = address;
-                        updatePaymentSummary(); // <-- ATUALIZA O RESUMO
+                        updatePaymentSummary();
                         addressManagementModal.classList.add('hidden');
                         paymentModal.classList.remove('hidden');
-                        paymentMethodSelect.value = '';
-                        paymentError.classList.add('hidden');
                     };
-                    addressDiv.appendChild(useButton);
                     addressList.appendChild(addressDiv);
                 });
             } else {
@@ -787,110 +740,96 @@
             addressManagementModal.classList.remove('hidden');
         }
 
-        function removeCupom(showMinAmountMessage = false) {
-            if (showMinAmountMessage) {
-                showToast('O valor do carrinho é inferior ao mínimo exigido pelo cupom.', true);
-                cupomMessage.textContent = `Valor mínimo de R$ ${appliedCupom.cupom.valorMinimo.toFixed(2)} não atingido.`;
-                cupomMessage.className = 'text-sm text-red-500';
-            } else if (appliedCupom) { 
-                 showToast('Cupom removido.');
-                 cupomMessage.textContent = '';
-            }
-
+        function removeCupom() {
+            if (appliedCupom) showToast('Cupom removido.');
             appliedCupom = null;
-            cupomInput.value = '';
-            cupomInput.disabled = false;
-            verifyCupomButton.textContent = 'Verificar';
-            verifyCupomButton.classList.replace('bg-red-600', 'bg-gray-600');
-            verifyCupomButton.classList.replace('hover:bg-red-700', 'hover:bg-gray-700');
-            if(!showMinAmountMessage) {
-              cupomMessage.textContent = '';
-            }
+            
+            [guestCupomInput, paymentCupomInput].forEach(input => { input.value = ''; input.disabled = false; });
+            [guestVerifyCupomButton, paymentVerifyCupomButton].forEach(btn => {
+                btn.textContent = 'Aplicar';
+                btn.classList.replace('bg-red-600', 'bg-gray-600');
+                btn.classList.replace('hover:bg-red-700', 'hover:bg-gray-700');
+            });
+            [guestCupomMessage, paymentCupomMessage].forEach(msg => { msg.textContent = ''; });
+            
             updateCartInfo();
+        }
+        
+        async function handleVerifyCupom(cupomInputEl, cupomMessageEl, verifyButtonEl, telefone) {
+             if (appliedCupom) {
+                removeCupom();
+                return;
+            }
+            const codigo = cupomInputEl.value.trim().toUpperCase();
+            if (!codigo) { showToast('Digite um código de cupom.', true); return; }
+            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
+            if (subtotal <= 0) { showToast('Adicione itens ao carrinho primeiro.', true); return; }
+            if (!telefone) { showToast('É necessário informar um telefone.', true); return; }
+
+            try {
+                verifyButtonEl.disabled = true;
+                verifyButtonEl.innerHTML = '<div class="loader !w-5 !h-5 !border-2 !border-t-white mx-auto"></div>';
+
+                const response = await fetch(`${API_BASE_URL}/cupons/verificar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo, totalCarrinho: subtotal, telefone })
+                });
+
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.mensagem || `Erro ${response.status}`);
+                }
+                const result = await response.json();
+                
+                if (result.valido) {
+                    appliedCupom = result;
+                    [guestCupomMessage, paymentCupomMessage].forEach(msg => { msg.textContent = `Cupom "${result.cupom.codigo}" aplicado!`; msg.className = 'text-sm text-green-600'; });
+                    [guestCupomInput, paymentCupomInput].forEach(input => { input.value = result.cupom.codigo; input.disabled = true; });
+                    [guestVerifyCupomButton, paymentVerifyCupomButton].forEach(btn => {
+                        btn.textContent = 'Remover';
+                        btn.classList.replace('bg-gray-600', 'bg-red-600');
+                        btn.classList.replace('hover:bg-gray-700', 'hover:bg-red-700');
+                    });
+                    showToast('Cupom aplicado com sucesso!');
+                    updateCartInfo();
+                } else {
+                    appliedCupom = null;
+                    cupomMessageEl.textContent = result.mensagem || 'Cupom inválido.';
+                    cupomMessageEl.className = 'text-sm text-red-500';
+                }
+            } catch (error) {
+                console.error("Erro ao verificar cupom:", error);
+                cupomMessageEl.textContent = error.message || 'Erro ao conectar com o servidor.';
+                cupomMessageEl.className = 'text-sm text-red-500';
+                appliedCupom = null;
+            } finally {
+                verifyButtonEl.disabled = false;
+                if(!appliedCupom) { verifyButtonEl.innerHTML = 'Aplicar'; } 
+                else { 
+                    [guestVerifyCupomButton, paymentVerifyCupomButton].forEach(btn => btn.innerHTML = 'Remover');
+                }
+            }
         }
 
         // --- Event Listeners ---
         cartButton.addEventListener('click', () => cartModal.classList.remove('hidden'));
         closeCartButton.addEventListener('click', () => cartModal.classList.add('hidden'));
 
-        verifyCupomButton.addEventListener('click', async () => {
-            if (appliedCupom) {
-                removeCupom();
-                return;
-            }
-            
-            const codigo = cupomInput.value.trim().toUpperCase();
-            if (!codigo) {
-                showToast('Digite um código de cupom.', true);
-                return;
-            }
+        guestVerifyCupomButton.addEventListener('click', () => handleVerifyCupom(guestCupomInput, guestCupomMessage, guestVerifyCupomButton, guestPhoneInput.value));
+        paymentVerifyCupomButton.addEventListener('click', () => handleVerifyCupom(paymentCupomInput, paymentCupomMessage, paymentVerifyCupomButton, currentClient?.telefone));
 
-            const subtotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0);
-
-            // MELHORIA: Adiciona verificação para não enviar requisição com carrinho vazio
-            if (subtotal <= 0) {
-                showToast('Adicione itens ao carrinho antes de aplicar um cupom.', true);
-                return;
-            }
-
-            try {
-                verifyCupomButton.disabled = true;
-                verifyCupomButton.innerHTML = '<div class="loader !w-5 !h-5 !border-2 !border-t-white mx-auto"></div>';
-
-                const response = await fetch(`${API_BASE_URL}/cupons/verificar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codigo, totalCarrinho: subtotal })
-                });
-
-                // Verifica se a resposta não foi OK (ex: 400, 404, 500)
-                if (!response.ok) {
-                    const errorResult = await response.json();
-                    throw new Error(errorResult.mensagem || `Erro ${response.status}`);
-                }
-                
-                const result = await response.json();
-                appliedCupom = result;
-
-                if (result.valido) {
-                    cupomMessage.textContent = `Cupom "${result.cupom.codigo}" aplicado!`;
-                    cupomMessage.className = 'text-sm text-green-600';
-                    cupomInput.disabled = true;
-                    verifyCupomButton.textContent = 'Remover';
-                    verifyCupomButton.classList.replace('bg-gray-600', 'bg-red-600');
-                    verifyCupomButton.classList.replace('hover:bg-gray-700', 'hover:bg-red-700');
-                    showToast('Cupom aplicado com sucesso!');
-                    updateCartInfo();
-                } else {
-                    // Mensagens de erro de validação do backend
-                    cupomMessage.textContent = result.mensagem || 'Cupom inválido.';
-                    cupomMessage.className = 'text-sm text-red-500';
-                    appliedCupom = null;
-                }
-            } catch (error) {
-                console.error("Erro ao verificar cupom:", error);
-                cupomMessage.textContent = error.message || 'Erro ao conectar com o servidor.';
-                cupomMessage.className = 'text-sm text-red-500';
-                appliedCupom = null;
-            } finally {
-                verifyCupomButton.disabled = false;
-                if(!appliedCupom) {
-                   verifyCupomButton.innerHTML = 'Verificar';
-                } else {
-                    verifyCupomButton.innerHTML = 'Remover';
-                }
-            }
+        checkoutButton.addEventListener('click', () => { 
+            if (cart.length === 0) return; 
+            removeCupom();
+            cartModal.classList.add('hidden'); 
+            identificationModal.classList.remove('hidden'); 
         });
-
-        checkoutButton.addEventListener('click', () => { if (cart.length === 0) return; cartModal.classList.add('hidden'); identificationModal.classList.remove('hidden'); });
+        
         closeIdentificationModal.addEventListener('click', () => identificationModal.classList.add('hidden'));
         usePhoneButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); phoneLoginModal.classList.remove('hidden'); phoneInput.value = ''; phoneError.classList.add('hidden'); });
         closePhoneLoginModal.addEventListener('click', () => { phoneLoginModal.classList.add('hidden'); currentClient = null; });
-        continueGuestButton.addEventListener('click', () => { 
-            identificationModal.classList.add('hidden'); 
-            updateGuestSummary();
-            guestInfoModal.classList.remove('hidden'); 
-        });
+        continueGuestButton.addEventListener('click', () => { identificationModal.classList.add('hidden'); updateGuestSummary(); guestInfoModal.classList.remove('hidden'); });
         closeGuestInfoModal.addEventListener('click', () => guestInfoModal.classList.add('hidden'));
         
         searchPhoneButton.addEventListener('click', async () => {
@@ -901,17 +840,9 @@
                 const response = await fetch(`${API_BASE_URL}/clientes`);
                 const allClients = await response.json();
                 const foundClient = allClients.find(client => client.telefone && client.telefone.replace(/\D/g, '') === phone);
-                
                 phoneLoginModal.classList.add('hidden');
-
-                if (foundClient) {
-                    openAddressManagementModal(foundClient);
-                } 
-                else { 
-                    currentClient = { nome: 'Novo Cliente', telefone: phone, enderecos: [] };
-                    openAddressManagementModal(currentClient);
-                }
-            } catch (error) { console.error("Erro ao buscar cliente:", error); phoneError.textContent = 'Erro ao conectar com o servidor.'; phoneError.classList.remove('hidden'); }
+                openAddressManagementModal(foundClient || { nome: 'Novo Cliente', telefone: phone, enderecos: [] });
+            } catch (error) { console.error("Erro ao buscar cliente:", error); phoneError.textContent = 'Erro ao conectar.'; phoneError.classList.remove('hidden'); }
         });
         
         closeAddressManagementModal.addEventListener('click', () => { addressManagementModal.classList.add('hidden'); currentClient = null; });
@@ -919,51 +850,29 @@
         
         saveNewAddressButton.addEventListener('click', async () => {
             const newAddress = newAddressInput.value.trim();
-            if (!newAddress) {
-                showToast("Por favor, digite um novo endereço.", true);
-                return;
-            }
-
+            if (!newAddress) { showToast("Por favor, digite um novo endereço.", true); return; }
             try {
                 let finalOrderInfo;
                 if (currentClient && currentClient.id) {
-                    const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
+                    await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ newAddress: newAddress })
                     });
-                    if (!response.ok) throw new Error("Não foi possível salvar o novo endereço.");
-                    finalOrderInfo = { clienteId: currentClient.id, clienteNome: currentClient.nome, clienteEndereco: newAddress };
+                    finalOrderInfo = { clienteId: currentClient.id, clienteNome: currentClient.nome, clienteEndereco: newAddress, telefone: currentClient.telefone };
                 } else {
-                     if (currentClient.nome === 'Novo Cliente') {
-                        customerProfileModal.classList.remove('hidden');
-                        showToast('Por favor, preencha seu nome para o cadastro.', true);
-                        return;
-                    }
+                     if (currentClient.nome === 'Novo Cliente') { customerProfileModal.classList.remove('hidden'); showToast('Preencha seu nome para o cadastro.', true); return; }
                     const newClientData = { nome: currentClient.nome, aniversario: currentClient.aniversario || '', telefone: currentClient.telefone, enderecos: [newAddress], status: 'Ativo' };
-                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newClientData)
-                    });
-                    if (!createResponse.ok) throw new Error("Não foi possível criar o cadastro.");
+                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClientData) });
                     const createdClient = await createResponse.json();
-                    
-                    finalOrderInfo = { clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: newAddress };
+                    finalOrderInfo = { clienteId: createdClient.id, clienteNome: createdClient.nome, clienteEndereco: newAddress, telefone: createdClient.telefone };
                 }
-
                 pendingOrderDetails = finalOrderInfo;
                 selectedAddressText.textContent = finalOrderInfo.clienteEndereco;
                 updatePaymentSummary();
                 addressManagementModal.classList.add('hidden');
                 paymentModal.classList.remove('hidden');
-                paymentMethodSelect.value = '';
-                paymentError.classList.add('hidden');
-
-            } catch(error) {
-                console.error("Erro ao salvar endereço:", error);
-                showToast("Ocorreu um erro ao salvar o endereço.", true);
-            }
+            } catch(error) { showToast("Ocorreu um erro ao salvar o endereço.", true); }
         });
 
         editProfileButton.addEventListener('click', () => {
@@ -976,40 +885,21 @@
         closeCustomerProfileModal.addEventListener('click', () => customerProfileModal.classList.add('hidden'));
 
         saveProfileButton.addEventListener('click', async () => {
-            const newName = profileNameInput.value.trim();
-            const newDob = profileDobInput.value.trim();
-
-            if (!newName) {
-                showToast("O nome é obrigatório.", true);
-                return;
-            }
-            
-            const updatedData = { nome: newName, aniversario: newDob };
-
+            if (!profileNameInput.value.trim()) { showToast("O nome é obrigatório.", true); return; }
+            const updatedData = { nome: profileNameInput.value.trim(), aniversario: profileDobInput.value.trim() };
             try {
                  if (!currentClient.id) {
-                    currentClient.nome = newName;
-                    currentClient.aniversario = newDob;
+                    currentClient = {...currentClient, ...updatedData };
                     showToast("Dados salvos! Agora adicione um endereço.", false);
                  } else {
-                    const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedData)
-                    });
-                    if (!response.ok) throw new Error("Não foi possível atualizar o perfil.");
+                    const response = await fetch(`${API_BASE_URL}/clientes/${currentClient.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedData) });
                      currentClient = await response.json();
-                     showToast("Perfil atualizado com sucesso!", false);
+                     showToast("Perfil atualizado!", false);
                  }
-
                 customerProfileModal.classList.add('hidden');
                 addressManagementModal.classList.add('hidden');
                 openAddressManagementModal(currentClient);
-
-            } catch(error) {
-                console.error("Erro ao salvar perfil:", error);
-                showToast("Ocorreu um erro ao salvar o perfil.", true);
-            }
+            } catch(error) { showToast("Erro ao salvar o perfil.", true); }
         });
 
         sendWhatsappButton.addEventListener('click', async () => {
@@ -1017,86 +907,39 @@
             const address = guestAddressInput.value.trim();
             const phone = guestPhoneInput.value.trim();
             const paymentMethod = guestPaymentMethodSelect.value;
-            
-            if (!name || !address || !phone || !paymentMethod) { 
-                showToast('Preencha todos os campos, por favor.', true);
-                return; 
-            }
-            
+            if (!name || !address || !phone || !paymentMethod) { showToast('Preencha todos os campos.', true); return; }
             sendWhatsappButton.disabled = true;
             sendWhatsappButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-
             try {
                 const response = await fetch(`${API_BASE_URL}/clientes`);
-                if (!response.ok) throw new Error('Não foi possível conectar ao servidor.');
                 const allClients = await response.json();
                 const formattedPhone = phone.replace(/\D/g, '');
                 let client = allClients.find(c => c.telefone && c.telefone.replace(/\D/g, '') === formattedPhone);
-                let clientId;
-
-                if (client) {
-                    clientId = client.id;
-                } else {
+                let clientId = client?.id;
+                if (!client) {
                     const newClientData = { nome: name, enderecos: [address], telefone: phone, status: 'Ativo' };
-                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newClientData)
-                    });
-                    if (!createResponse.ok) throw new Error('Não foi possível criar o novo cliente.');
+                    const createResponse = await fetch(`${API_BASE_URL}/clientes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClientData) });
                     const createdClient = await createResponse.json();
                     clientId = createdClient.id;
                 }
-
-                await finalizeOrder({ 
-                    clienteNome: name, 
-                    clienteEndereco: address, 
-                    telefone: phone, 
-                    formaPagamento: paymentMethod 
-                }, clientId, false);
-                
-            } catch (error) {
-                console.error('Erro ao finalizar pedido como visitante:', error);
-                showToast('Ocorreu um erro ao processar o pedido.', true);
-            } finally {
-                sendWhatsappButton.disabled = false;
-                sendWhatsappButton.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp';
-            }
+                await finalizeOrder({ clienteNome: name, clienteEndereco: address, telefone: phone, formaPagamento: paymentMethod }, clientId, false);
+            } catch (error) { showToast('Erro ao processar o pedido.', true);
+            } finally { sendWhatsappButton.disabled = false; sendWhatsappButton.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp'; }
         });
 
         closePaymentModal.addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        backToAddressButton.addEventListener('click', () => {
-            paymentModal.classList.add('hidden');
-            addressManagementModal.classList.remove('hidden');
-        });
+        backToAddressButton.addEventListener('click', () => { paymentModal.classList.add('hidden'); addressManagementModal.classList.remove('hidden'); });
 
         confirmOrderButton.addEventListener('click', async () => {
-            const paymentMethod = paymentMethodSelect.value;
-            if (!paymentMethod) {
-                paymentError.textContent = 'Por favor, selecione uma forma de pagamento.';
-                paymentError.classList.remove('hidden');
-                return;
-            }
+            if (!paymentMethodSelect.value) { paymentError.textContent = 'Selecione uma forma de pagamento.'; paymentError.classList.remove('hidden'); return; }
             paymentError.classList.add('hidden');
-            
             confirmOrderButton.disabled = true;
             confirmOrderButton.textContent = 'Confirmando...';
-
             try {
-                const finalOrderDetails = {
-                    ...pendingOrderDetails,
-                    formaPagamento: paymentMethod
-                };
-                
+                const finalOrderDetails = { ...pendingOrderDetails, formaPagamento: paymentMethodSelect.value };
                 await finalizeOrder(finalOrderDetails, finalOrderDetails.clienteId, true);
-            } catch (error) {
-                 console.error('Erro ao confirmar o pedido:', error);
-                 showToast('Ocorreu um erro ao confirmar o pedido.', true);
-            } finally {
-                 confirmOrderButton.disabled = false;
-                 confirmOrderButton.textContent = 'Confirmar Pedido';
-            }
+            } catch (error) { showToast('Ocorreu um erro ao confirmar o pedido.', true);
+            } finally { confirmOrderButton.disabled = false; confirmOrderButton.textContent = 'Confirmar Pedido'; }
         });
 
         closeConfirmationButton.addEventListener('click', () => { confirmationModal.classList.add('hidden'); currentClient = null; });
@@ -1105,3 +948,4 @@
     </script>
 </body>
 </html>
+
