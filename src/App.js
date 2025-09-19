@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Calendar, Truck, DollarSign, BarChart3,
-  Search, Bell, Menu, User as UserIcon, Settings, LogOut, Plus, TrendingUp, Heart, AlertTriangle,
-  Clock, Star, Edit, Trash2, Eye, Filter, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin, UploadCloud, Image as ImageIcon, MessageSquare, VolumeX, ArrowUpCircle, ArrowDownCircle, Banknote, FileText, PackagePlus, Ticket, Tag
+  Search, Bell, Menu, User as UserIcon, Settings, LogOut, Plus, Heart,
+  Clock, Edit, Trash2, Eye, X, Save, MessageCircle, Phone, Cake, Coffee, Cookie, Sparkles, Gift, ChevronLeft, ChevronRight, Printer, Home, BookOpen, Instagram, MapPin, UploadCloud, Image as ImageIcon, MessageSquare, VolumeX, ArrowUpCircle, ArrowDownCircle, Banknote, FileText, PackagePlus, Ticket, Tag
 } from 'lucide-react';
 // Importações do Firebase
 import { auth, db, storage } from './firebaseClientConfig.js';
@@ -10,7 +10,8 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const API_BASE_URL = 'https://doceria-crm-backend.onrender.com/api';
+// URL da API do backend rodando no Firebase Cloud Functions (via Cloud Run)
+const API_BASE_URL = 'https://api-6i65vyioiq-rj.a.run.app';
 
 // Hook customizado para dados gerais
 const useData = ({ onNewOrder }) => {
@@ -1397,6 +1398,11 @@ function App() {
                   <Input label="Custo (R$)" type="number" step="0.01" value={formData.custo} onChange={(e) => setFormData({...formData, custo: e.target.value})} />
                   <Input label="Estoque" type="number" value={formData.estoque} onChange={(e) => setFormData({...formData, estoque: e.target.value})} />
                   <Input label="Tempo de Preparo" value={formData.tempoPreparo} onChange={(e) => setFormData({...formData, tempoPreparo: e.target.value})} />
+                  {/* ALTERAÇÃO AQUI: Adição do campo de Status */}
+                  <Select label="Status" value={formData.status || 'Ativo'} onChange={(e) => setFormData({...formData, status: e.target.value})} required>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Inativo">Inativo</option>
+                  </Select>
                 </div>
                 <div className="relative">
                   <Textarea label="Descrição" rows="3" value={formData.descricao} onChange={(e) => setFormData({...formData, descricao: e.target.value})} />
@@ -1431,6 +1437,10 @@ function App() {
     const [editingCupom, setEditingCupom] = useState(null);
     const [cupomFormData, setCupomFormData] = useState({});
 
+    // NOVO: States para Configuração de Frete
+    const [freteConfig, setFreteConfig] = useState({ enderecoLoja: '', lat: '', lng: '', valorPorKm: '' });
+    const [isSavingFrete, setIsSavingFrete] = useState(false);
+
     const fetchUsers = useCallback(async () => { 
         setUsersLoading(true); 
         try { 
@@ -1446,11 +1456,27 @@ function App() {
         } 
     }, [user.auth.uid]);
 
+    // NOVO: Função para buscar as configurações de frete
+    const fetchFreteConfig = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/configuracoes/frete`);
+            if (response.ok) {
+                const config = await response.json();
+                setFreteConfig(config);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar configurações de frete:", error);
+        }
+    }, []);
+
     useEffect(() => { 
         if (activeTab === 'users') {
             fetchUsers(); 
         }
-    }, [fetchUsers, activeTab]);
+        if (activeTab === 'frete') {
+            fetchFreteConfig();
+        }
+    }, [fetchUsers, fetchFreteConfig, activeTab]);
     
     // --- Handlers para Usuários ---
     const resetUserForm = () => { setShowUserModal(false); setEditingUser(null); setUserFormData({ email: '', password: '', role: 'Atendente' }); setUserFormError(''); };
@@ -1481,36 +1507,77 @@ function App() {
       fetchData(); // Força a atualização dos dados
     };
 
+    // NOVO: Handler para salvar as configurações de frete
+    const handleSaveFreteConfig = async (e) => {
+        e.preventDefault();
+        setIsSavingFrete(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/configuracoes/frete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...freteConfig,
+                    valorPorKm: parseFloat(freteConfig.valorPorKm)
+                }),
+            });
+            if (!response.ok) throw new Error("Falha ao salvar configurações.");
+            alert('Configurações de frete salvas com sucesso!');
+        } catch (error) {
+            console.error("Erro ao salvar frete:", error);
+            alert('Ocorreu um erro ao salvar as configurações.');
+        } finally {
+            setIsSavingFrete(false);
+        }
+    };
+
     const processedLogs = useMemo(() => {
         if (!data.logs) return [];
+        return data.logs.map(log => {
+            const { action, details } = log;
+            let formattedDetails = details;
+            
+             // Formatação aprimorada para logs de atualização
+            const updateMatch = details.match(/alterações: (\{.*\})/);
+            if (action.includes('atualizado') && updateMatch) {
+                try {
+                    const changes = JSON.parse(updateMatch[1]);
+                    const field = Object.keys(changes)[0];
+                    const { old: oldVal, new: newVal } = changes[field];
+                    const idMatch = details.match(/ID (\w+)/);
+                    const id = idMatch ? idMatch[1].substring(0,8) + '...' : 'ID desconhecido';
 
-        const formatLogDetails = (log) => {
-            const { details } = log;
-            // Tenta extrair o ID do log
-            const idMatch = details.match(/ID:? (\w+)/);
-            const itemId = idMatch ? idMatch[1] : null;
+                    formattedDetails = `Item "ID ${id}" atualizado (${field}: "${oldVal}" para "${newVal}")`;
+                } catch (e) { /* Mantém os detalhes originais se o JSON for inválido */ }
+            } else {
+                const idMatch = details.match(/ID:? (\w+)/);
+                if (idMatch) {
+                    const id = idMatch[1];
+                    let collectionName = null;
+                    if (action.includes('produtos')) collectionName = 'produtos';
+                    else if (action.includes('clientes')) collectionName = 'clientes';
+                    else if (action.includes('pedidos')) collectionName = 'pedidos';
+                    else if (action.includes('fornecedores')) collectionName = 'fornecedores';
+                    else if (action.includes('estoque')) collectionName = 'estoque';
+                    else if (action.includes('cupons')) collectionName = 'cupons';
 
-            if (itemId) {
-                // Tenta casar com o padrão de alteração "de/para"
-                const changeMatch = details.match(/(\w+) alterado de '([^']*)' para '([^']*)'/);
-                if (changeMatch) {
-                    const [, field, oldValue, newValue] = changeMatch;
-                    const formattedField = field.charAt(0).toUpperCase() + field.slice(1);
-                    // Usando uma substring do ID para uma exibição mais limpa
-                    return `Item "ID ${itemId.substring(0, 8)}..." atualizado (${formattedField}: "${oldValue}" para "${newValue}")`;
+                    if (collectionName && data[collectionName]) {
+                        const item = data[collectionName].find(d => d.id === id);
+                        if (item) {
+                            const itemName = item.nome || item.clienteNome || item.codigo || `(ID: ${id})`;
+                            formattedDetails = details.replace(`ID: ${id}`, `"${itemName}"`).replace(`ID ${id}`, `"${itemName}"`);
+                        }
+                    }
                 }
             }
             
-            // Fallback para outros tipos de log (criação, exclusão, etc.) ou se o padrão não corresponder
-            return details;
-        };
+            return {
+                ...log,
+                user: log.userEmail || 'Não registrado',
+                formattedDetails: formattedDetails,
+            };
+        }).sort((a, b) => (getJSDate(b.timestamp) || 0) - (getJSDate(a.timestamp) || 0));
 
-        return data.logs.map(log => ({
-            ...log,
-            user: log.userEmail || 'Não registrado',
-            formattedDetails: formatLogDetails(log),
-        })).sort((a, b) => (getJSDate(b.timestamp) || 0) - (getJSDate(a.timestamp) || 0));
-    }, [data.logs]);
+    }, [data]);
     
     // Colunas e Ações para as Tabelas
     const userColumns = [ { header: "Email", key: "email" }, { header: "Permissão", render: (row) => <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>{row.role}</span> } ];
@@ -1536,7 +1603,7 @@ function App() {
         <div className="p-4 md:p-6 space-y-6 bg-gradient-to-br from-pink-50/30 to-rose-50/30 min-h-screen">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
-              <p className="text-gray-600 mt-1">Gerencie usuários, cupons e visualize os logs do sistema</p>
+              <p className="text-gray-600 mt-1">Gerencie usuários, cupons, frete e visualize os logs do sistema</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
@@ -1546,6 +1613,9 @@ function App() {
                     </button>
                     <button onClick={() => setActiveTab('cupons')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'cupons' ? 'bg-pink-600 text-white' : 'hover:bg-pink-100'}`}>
                         Cupons
+                    </button>
+                    <button onClick={() => setActiveTab('frete')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'frete' ? 'bg-pink-600 text-white' : 'hover:bg-pink-100'}`}>
+                        Frete
                     </button>
                     <button onClick={() => setActiveTab('logs')} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === 'logs' ? 'bg-pink-600 text-white' : 'hover:bg-pink-100'}`}>
                         Logs de Atividade
@@ -1574,6 +1644,54 @@ function App() {
             {activeTab === 'logs' && (
                 <div className="mt-4">
                   <Table columns={logColumns} data={processedLogs} />
+                </div>
+            )}
+            
+            {activeTab === 'frete' && (
+                <div className="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                    <form onSubmit={handleSaveFreteConfig} className="space-y-4 max-w-lg">
+                        <h3 className="text-xl font-bold text-gray-800">Configurações de Entrega</h3>
+                        <p className="text-sm text-gray-500">
+                            Defina o endereço de partida dos seus pedidos e o valor cobrado por quilômetro. As coordenadas podem ser encontradas no Google Maps.
+                        </p>
+                        <Input 
+                            label="Endereço da Loja (para referência)" 
+                            placeholder="Ex: Av. Comercial, 433, Goiânia"
+                            value={freteConfig.enderecoLoja || ''} 
+                            onChange={e => setFreteConfig({ ...freteConfig, enderecoLoja: e.target.value })} 
+                            required 
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input 
+                                label="Latitude da Loja" 
+                                placeholder="-16.6725019"
+                                value={freteConfig.lat || ''} 
+                                onChange={e => setFreteConfig({ ...freteConfig, lat: e.target.value })} 
+                                required 
+                            />
+                            <Input 
+                                label="Longitude da Loja" 
+                                placeholder="-49.3274707"
+                                value={freteConfig.lng || ''} 
+                                onChange={e => setFreteConfig({ ...freteConfig, lng: e.target.value })} 
+                                required 
+                            />
+                        </div>
+                        <Input 
+                            label="Valor por KM (R$)" 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Ex: 1.50"
+                            value={freteConfig.valorPorKm || ''} 
+                            onChange={e => setFreteConfig({ ...freteConfig, valorPorKm: e.target.value })} 
+                            required 
+                        />
+                        <div className="pt-4">
+                            <Button type="submit" disabled={isSavingFrete}>
+                                <Save className="w-4 h-4" /> {isSavingFrete ? 'Salvando...' : 'Salvar Configurações'}
+                            </Button>
+                        </div>
+                    </form>
                 </div>
             )}
             
@@ -2409,3 +2527,4 @@ function App() {
 }
 
 export default App;
+
